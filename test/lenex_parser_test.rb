@@ -1,0 +1,13 @@
+# frozen_string_literal: true
+
+require 'test_helper'
+
+class LenexParserTest < Minitest::Test
+  def test_that_it_has_a_version_number
+    refute_nil ::Lenex::Parser::VERSION
+  end
+
+  def test_it_does_something_useful
+    skip 'Implementation pending'
+  end
+end
