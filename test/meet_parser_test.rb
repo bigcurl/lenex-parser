@@ -15,6 +15,18 @@ class MeetParserTest < Minitest::Test
     assert_match(/MEET name attribute is required/, error.message)
   end
 
+  def test_missing_meet_city_raises
+    error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(meet_xml_without_city) }
+
+    assert_match(/MEET city attribute is required/, error.message)
+  end
+
+  def test_missing_meet_nation_raises
+    error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(meet_xml_without_nation) }
+
+    assert_match(/MEET nation attribute is required/, error.message)
+  end
+
   private
 
   def expected_meet_attributes
@@ -64,6 +76,36 @@ class MeetParserTest < Minitest::Test
         </CONSTRUCTOR>
         <MEETS>
           <MEET city="Berlin" nation="GER">
+            <CONTACT email="meet@example.com" />
+          </MEET>
+        </MEETS>
+      </LENEX>
+    XML
+  end
+
+  def meet_xml_without_city
+    <<~XML
+      <LENEX version="3.0">
+        <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
+          <CONTACT email="support@example.com" />
+        </CONSTRUCTOR>
+        <MEETS>
+          <MEET name="Spring Invitational" nation="GER">
+            <CONTACT email="meet@example.com" />
+          </MEET>
+        </MEETS>
+      </LENEX>
+    XML
+  end
+
+  def meet_xml_without_nation
+    <<~XML
+      <LENEX version="3.0">
+        <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
+          <CONTACT email="support@example.com" />
+        </CONSTRUCTOR>
+        <MEETS>
+          <MEET name="Spring Invitational" city="Berlin">
             <CONTACT email="meet@example.com" />
           </MEET>
         </MEETS>

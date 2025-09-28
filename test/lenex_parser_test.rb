@@ -49,6 +49,17 @@ class LenexParserTest < Minitest::Test
     assert_match(/CONSTRUCTOR element is required/, error.message)
   end
 
+  def test_missing_constructor_contact_raises
+    xml = <<~XML
+      <LENEX version="3.0">
+        <CONSTRUCTOR name="Builder" registration="Example Org" version="1.2.3" />
+      </LENEX>
+    XML
+
+    error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
+    assert_match(/CONTACT element is required/, error.message)
+  end
+
   def test_missing_contact_email_raises
     xml = <<~XML
       <LENEX version="3.0">
@@ -60,5 +71,57 @@ class LenexParserTest < Minitest::Test
 
     error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
     assert_match(/CONTACT email attribute is required/, error.message)
+  end
+
+  def test_missing_constructor_name_raises
+    xml = <<~XML
+      <LENEX version="3.0">
+        <CONSTRUCTOR registration="Example Org" version="1.2.3">
+          <CONTACT email="support@example.com" />
+        </CONSTRUCTOR>
+      </LENEX>
+    XML
+
+    error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
+    assert_match(/CONSTRUCTOR name attribute is required/, error.message)
+  end
+
+  def test_missing_constructor_registration_raises
+    xml = <<~XML
+      <LENEX version="3.0">
+        <CONSTRUCTOR name="Builder" version="1.2.3">
+          <CONTACT email="support@example.com" />
+        </CONSTRUCTOR>
+      </LENEX>
+    XML
+
+    error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
+    assert_match(/CONSTRUCTOR registration attribute is required/, error.message)
+  end
+
+  def test_missing_constructor_version_raises
+    xml = <<~XML
+      <LENEX version="3.0">
+        <CONSTRUCTOR name="Builder" registration="Example Org">
+          <CONTACT email="support@example.com" />
+        </CONSTRUCTOR>
+      </LENEX>
+    XML
+
+    error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
+    assert_match(/CONSTRUCTOR version attribute is required/, error.message)
+  end
+
+  def test_missing_lenex_version_raises
+    xml = <<~XML
+      <LENEX>
+        <CONSTRUCTOR name="Builder" registration="Example Org" version="1.2.3">
+          <CONTACT email="support@example.com" />
+        </CONSTRUCTOR>
+      </LENEX>
+    XML
+
+    error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
+    assert_match(/LENEX version attribute is required/, error.message)
   end
 end

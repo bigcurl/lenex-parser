@@ -101,6 +101,93 @@ The session object exposes:
 - `timing` – Optional timing system information for the session.
 - `touchpad_mode` – Optional touchpad mode description.
 - `warmup_from` / `warmup_until` – Optional warm-up window times.
+- `pool` – Optional `Lenex::Parser::Objects::Pool` describing the lane configuration and environment of the competition pool.
+- `judges` – Array of `Lenex::Parser::Objects::Judge` objects covering the meet officials attached to the session.
+- `events` – Array of `Lenex::Parser::Objects::Event` objects with the events contested in the session.
+
+The event object exposes:
+
+- `event_id` – Required identifier unique across all events in a meet (sourced from the `eventid` attribute).
+- `number` – Required event number within the meet program.
+- `gender` – Optional gender designator (`A`, `M`, `F`, or `X`).
+- `round` – Optional round identifier such as `PRE`, `SEM`, or `FIN`.
+- `daytime` – Optional scheduled start time for the event.
+- `max_entries` – Optional maximum number of entries per club for the event.
+- `order` – Optional event order overriding the numeric sequence when necessary.
+- `previous_event_id` – Optional identifier of the preceding round for finals progression.
+- `run` – Optional swim-off run counter.
+- `timing` – Optional timing type overriding the session defaults.
+- `type` – Optional event classification (e.g., `MASTERS`).
+- `fee` – Optional `Lenex::Parser::Objects::Fee` representing the event specific entry fee.
+- `swim_style` – `Lenex::Parser::Objects::SwimStyle` describing the stroke, distance, and relay composition of the event.
+- `age_groups` – Array of `Lenex::Parser::Objects::AgeGroup` objects defining eligible age ranges.
+- `heats` – Array of `Lenex::Parser::Objects::Heat` objects describing detailed start lists.
+- `time_standard_refs` – Array of `Lenex::Parser::Objects::TimeStandardRef` objects referencing applicable time standard lists and optional fines.
+
+The heat object exposes:
+
+- `heat_id` – Required identifier unique across all heats within a meet (from the `heatid` attribute).
+- `number` – Required heat number unique within an event.
+- `age_group_id` – Optional reference to an age group that the heat belongs to.
+- `daytime` – Optional scheduled start time for the heat.
+- `final` – Optional final designator (`A`, `B`, `C`, or `D`).
+- `order` – Optional order override when heats do not run sequentially.
+- `status` – Optional heat status such as `SCHEDULED`, `SEEDED`, `INOFFICIAL`, or `OFFICIAL`.
+
+The age group object exposes:
+
+- `age_group_id` – Required identifier unique within the event, referenced by entries.
+- `age_max` – Required upper bound of the age range (`-1` indicates no upper bound).
+- `age_min` – Required lower bound of the age range (`-1` indicates no lower bound).
+- `calculate` – Optional calculation mode for relay totals (`SINGLE` or `TOTAL`).
+- `gender` – Optional gender limitation for the age group (`A`, `M`, `F`, or `X`).
+- `handicap` – Optional para-swimming handicap class grouping.
+- `level_max` / `level_min` – Optional bounds restricting athlete levels.
+- `levels` – Optional comma-separated list of explicitly allowed athlete levels.
+- `name` – Optional display name for the age group (e.g., "Juniors").
+- `rankings` – Array of `Lenex::Parser::Objects::Ranking` objects capturing the final placements for the age group within the event.
+
+The swim style object exposes:
+
+- `distance` – Required event distance in meters for each competitor (per-leg distance for relays).
+- `relay_count` – Required number of swimmers per entry (use `1` for individual events).
+- `stroke` – Required stroke enumeration for the event (e.g., `FREE`, `BACK`, `MEDLEY`).
+- `code` – Optional short code to distinguish custom swim styles when the stroke is `UNKNOWN`.
+- `name` – Optional descriptive name for unusual swim styles.
+- `swim_style_id` – Optional identifier to uniquely track special swim styles across the meet.
+- `technique` – Optional technique modifier (e.g., `KICK`, `TURN`) for skill-specific events.
+
+The fee object exposes:
+
+- `currency` – Optional three-letter currency code describing the fee currency.
+- `type` – Optional fee classification (e.g., `ATHLETE`, `RELAY`, `CLUB`) used in the context of fee collections.
+- `value` – Required monetary value expressed in cents.
+
+The ranking object exposes:
+
+- `place` – Required final place within the rankings list.
+- `result_id` – Required identifier referencing the associated result entry.
+- `order` – Optional explicit ordering override for ranking presentation.
+
+The pool object exposes:
+
+- `lane_min` – Optional first lane number used during the meet or session.
+- `lane_max` – Optional last lane number available for competition.
+- `temperature` – Optional reported water temperature.
+- `type` – Optional venue type (e.g., `INDOOR`, `OUTDOOR`, `LAKE`, `OCEAN`).
+
+The judge object exposes:
+
+- `official_id` – Required identifier referencing the official in the meet's official list.
+- `number` – Optional sequencing or lane assignment for the judge.
+- `role` – Optional role descriptor reflecting the official's duties (e.g., `REF`, `TIK`).
+- `remarks` – Optional free-form remarks about the assignment.
+
+The time standard reference object exposes:
+
+- `time_standard_list_id` – Required identifier pointing to the referenced time standard list.
+- `marker` – Optional string used to annotate results that met or missed the referenced time standard.
+- `fee` – Optional `Lenex::Parser::Objects::Fee` describing fines or penalties linked to the time standard reference.
 
 ### Error handling
 
