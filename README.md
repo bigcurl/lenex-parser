@@ -24,7 +24,46 @@ gem install lenex-parser
 
 ## Usage
 
-Implementation is in progress. Stay tuned for upcoming parsing features.
+```ruby
+require 'lenex/parser'
+
+xml = File.read('meet.lenex')
+
+lenex = Lenex::Parser.parse(xml)
+
+puts "Lenex version: #{lenex.version}"
+puts "Revision: #{lenex.revision}"
+puts "Built by: #{lenex.constructor.name} (#{lenex.constructor.version})"
+puts "Contact email: #{lenex.constructor.contact.email}"
+```
+
+`Lenex::Parser.parse` accepts any IO-like object (such as a `File` opened in binary mode) or a raw XML string.
+
+### Object model overview
+
+The parser returns a `Lenex::Parser::Objects::Lenex` instance that exposes the top-level metadata of the Lenex file:
+
+- `version` – Lenex schema version string declared in the `<LENEX>` root element.
+- `revision` – Revision identifier provided by the source system.
+- `constructor` – A `Lenex::Parser::Objects::Constructor` with information about who produced the file.
+
+The constructor object provides these accessors:
+
+- `name` – Application or organisation name responsible for generating the export.
+- `registration` – Registration number reported in the `<CONSTRUCTOR>` element.
+- `version` – Constructor application version string.
+- `contact` – A `Lenex::Parser::Objects::Contact` containing communication details for the file creator.
+
+The contact object yields:
+
+- `email` – Email address for follow-up questions.
+- `phone` – Optional phone number if available.
+- `fax` – Optional fax number.
+- `name` – Contact person's full name when supplied.
+
+### Error handling
+
+Parsing issues raise `Lenex::Parser::ParseError`. This includes missing required elements or attributes, as well as XML syntax errors encountered while reading the document.
 
 ## Development
 

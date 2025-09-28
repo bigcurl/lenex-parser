@@ -30,4 +30,6 @@ Gem::Specification.new do |spec|
   spec.bindir        = 'bin'
   spec.executables   = Dir.children('bin').grep_v(/\A\./)
   spec.require_paths = ['lib']
+
+  spec.add_dependency 'nokogiri', '>= 1.14'
 end
