@@ -5,7 +5,7 @@
 - Commit changes with clear messages and prepare to describe modifications for the next prompt.
 - The repository's Markdown specification is documented in `specifications/lenex-v3.md`.
 
-# Coding Guidelines for dsv7-parser
+# Coding Guidelines for lenex-parser
 
 Concise conventions for contributing code and tests to this repo. Focus is on a small, dependency-light Ruby library with a streaming validator and Minitest suite.
 
