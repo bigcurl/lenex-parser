@@ -189,6 +189,69 @@ The time standard reference object exposes:
 - `marker` – Optional string used to annotate results that met or missed the referenced time standard.
 - `fee` – Optional `Lenex::Parser::Objects::Fee` describing fines or penalties linked to the time standard reference.
 
+The athlete object exposes:
+
+- `athlete_id` – Required identifier unique to the athlete within the meet.
+- `birthdate` – Required birth date of the athlete in `YYYY-MM-DD` format.
+- `first_name` / `first_name_en` – Required first name and optional English variant.
+- `last_name` / `last_name_en` – Required last name and optional English variant.
+- `gender` – Required gender flag (`M` or `F`).
+- `level` – Optional athlete level string.
+- `license` / `license_ipc` – Optional federation and IPC license identifiers.
+- `name_prefix` – Optional surname prefix (e.g., "van den").
+- `nation` – Optional athlete nation code.
+- `passport` – Optional passport number.
+- `status` – Optional status flag such as `ROOKIE`, `FOREIGNER`, or `EXHIBITION`.
+- `swrid` – Optional SwimRankings.net identifier.
+- `entries` – Array of `Lenex::Parser::Objects::Entry` representing the athlete's entries.
+- `results` – Array of `Lenex::Parser::Objects::Result` representing the athlete's results.
+
+The entry object exposes:
+
+- `event_id` – Required reference to the event the entry belongs to.
+- `entry_time` – Optional entry time string.
+- `status` – Optional status flag such as `SICK` or `WDR`.
+- `lane` – Optional assigned lane number.
+- `heat_id` – Optional reference to the scheduled heat.
+- `age_group_id` – Optional reference to the event age group.
+- `entry_course` – Optional pool length for the entry time.
+- `entry_distance` – Optional entry distance in centimetres for fin-swimming events.
+- `handicap` – Optional para-swimming sport class override.
+- `meet_info` – Optional `Lenex::Parser::Objects::MeetInfo` describing when the entry time was achieved.
+
+The meet info object exposes:
+
+- `approved` – Optional approving organisation code (e.g., `AQUA`, `LEN`).
+- `city` / `state` – Optional city and state where the time was achieved.
+- `course` – Optional pool length used for the entry or record.
+- `date` – Optional date when the time was achieved.
+- `daytime` – Optional time of day when the swim occurred.
+- `name` – Optional meet name.
+- `nation` – Optional nation code for the city.
+- `qualification_time` – Optional qualifying time differing from the entry time.
+- `timing` – Optional timing system used for the swim.
+- `pool` – Optional `Lenex::Parser::Objects::Pool` describing the pool where the time was achieved.
+
+The result object exposes:
+
+- `result_id` – Required identifier unique to the result within the meet.
+- `swim_time` – Required final swim time string or `NT`.
+- `status` – Optional status flag such as `DSQ`, `DNS`, or `EXH`.
+- `comment` – Optional free-text comment (e.g., new record remarks).
+- `event_id` – Optional reference to the event.
+- `heat_id` – Optional reference to the heat.
+- `lane` – Optional lane number.
+- `points` – Optional points scored for the swim.
+- `reaction_time` – Optional start reaction time for the swim.
+- `handicap` – Optional para-swimming sport class override.
+- `swim_distance` – Optional distance in centimetres for fin-swimming events.
+- `splits` – Array of `Lenex::Parser::Objects::Split` describing split times.
+
+The split object exposes:
+
+- `distance` – Required split distance in meters.
+- `swim_time` – Required split time for the distance in swim-time format.
+
 ### Error handling
 
 Parsing issues raise `Lenex::Parser::ParseError`. This includes missing required elements or attributes, as well as XML syntax errors encountered while reading the document.

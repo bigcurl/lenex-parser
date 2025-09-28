@@ -63,14 +63,19 @@ module Lenex
           'type' => { key: :type, required: false }
         }.freeze
 
-        attr_reader(*ATTRIBUTES.values.map { |definition| definition[:key] }, :contact)
+        attr_reader(
+          *ATTRIBUTES.values.map { |definition| definition[:key] },
+          :contact,
+          :athletes
+        )
 
-        def initialize(contact: nil, **attributes)
+        def initialize(contact: nil, athletes: [], **attributes)
           ATTRIBUTES.each_value do |definition|
             key = definition[:key]
             instance_variable_set(:"@#{key}", attributes[key])
           end
           @contact = contact
+          @athletes = Array(athletes)
         end
 
         def self.from_xml(element)
@@ -81,8 +86,9 @@ module Lenex
 
           contact_element = element.at_xpath('CONTACT')
           contact = contact_element ? Contact.from_xml(contact_element) : nil
+          athletes = extract_athletes(element.at_xpath('ATHLETES'))
 
-          new(**attributes, contact:)
+          new(**attributes, contact:, athletes:)
         end
 
         def self.extract_attributes(element)
@@ -103,6 +109,311 @@ module Lenex
           raise ::Lenex::Parser::ParseError, 'CLUB name attribute is required'
         end
         private_class_method :ensure_required_attributes!
+
+        def self.extract_athletes(collection_element)
+          return [] unless collection_element
+
+          collection_element.xpath('ATHLETE').map do |athlete_element|
+            Athlete.from_xml(athlete_element)
+          end
+        end
+        private_class_method :extract_athletes
+      end
+
+      # Value object representing an ATHLETE element.
+      class Athlete
+        ATTRIBUTES = {
+          'athleteid' => { key: :athlete_id, required: true },
+          'birthdate' => { key: :birthdate, required: true },
+          'firstname' => { key: :first_name, required: true },
+          'firstname.en' => { key: :first_name_en, required: false },
+          'gender' => { key: :gender, required: true },
+          'lastname' => { key: :last_name, required: true },
+          'lastname.en' => { key: :last_name_en, required: false },
+          'level' => { key: :level, required: false },
+          'license' => { key: :license, required: false },
+          'license_ipc' => { key: :license_ipc, required: false },
+          'nameprefix' => { key: :name_prefix, required: false },
+          'nation' => { key: :nation, required: false },
+          'passport' => { key: :passport, required: false },
+          'status' => { key: :status, required: false },
+          'swrid' => { key: :swrid, required: false }
+        }.freeze
+
+        attr_reader(
+          *ATTRIBUTES.values.map { |definition| definition[:key] },
+          :entries,
+          :results
+        )
+
+        def initialize(entries: [], results: [], **attributes)
+          ATTRIBUTES.each_value do |definition|
+            key = definition[:key]
+            instance_variable_set(:"@#{key}", attributes[key])
+          end
+          @entries = Array(entries)
+          @results = Array(results)
+        end
+
+        def self.from_xml(element)
+          raise ::Lenex::Parser::ParseError, 'ATHLETE element is required' unless element
+
+          attributes = extract_attributes(element)
+          entries = extract_entries(element.at_xpath('ENTRIES'))
+          results = extract_results(element.at_xpath('RESULTS'))
+
+          new(**attributes, entries:, results:)
+        end
+
+        def self.extract_attributes(element)
+          ATTRIBUTES.each_with_object({}) do |(attribute_name, definition), collected|
+            value = element.attribute(attribute_name)&.value
+            ensure_required_attribute!(attribute_name, definition, value)
+            collected[definition[:key]] = value if value
+          end
+        end
+        private_class_method :extract_attributes
+
+        def self.ensure_required_attribute!(attribute_name, definition, value)
+          return unless definition[:required]
+          return unless value.nil? || value.strip.empty?
+
+          message = "ATHLETE #{attribute_name} attribute is required"
+          raise ::Lenex::Parser::ParseError, message
+        end
+        private_class_method :ensure_required_attribute!
+
+        def self.extract_entries(collection_element)
+          return [] unless collection_element
+
+          collection_element.xpath('ENTRY').map do |entry_element|
+            Entry.from_xml(entry_element)
+          end
+        end
+        private_class_method :extract_entries
+
+        def self.extract_results(collection_element)
+          return [] unless collection_element
+
+          collection_element.xpath('RESULT').map do |result_element|
+            Result.from_xml(result_element)
+          end
+        end
+        private_class_method :extract_results
+      end
+
+      # Value object representing an ENTRY element.
+      class Entry
+        ATTRIBUTES = {
+          'agegroupid' => { key: :age_group_id, required: false },
+          'entrycourse' => { key: :entry_course, required: false },
+          'entrydistance' => { key: :entry_distance, required: false },
+          'entrytime' => { key: :entry_time, required: false },
+          'eventid' => { key: :event_id, required: true },
+          'handicap' => { key: :handicap, required: false },
+          'heatid' => { key: :heat_id, required: false },
+          'lane' => { key: :lane, required: false },
+          'status' => { key: :status, required: false }
+        }.freeze
+
+        attr_reader(*ATTRIBUTES.values.map { |definition| definition[:key] }, :meet_info)
+
+        def initialize(meet_info: nil, **attributes)
+          ATTRIBUTES.each_value do |definition|
+            key = definition[:key]
+            instance_variable_set(:"@#{key}", attributes[key])
+          end
+          @meet_info = meet_info
+        end
+
+        def self.from_xml(element)
+          raise ::Lenex::Parser::ParseError, 'ENTRY element is required' unless element
+
+          attributes = extract_attributes(element)
+          meet_info = meet_info_from(element.at_xpath('MEETINFO'))
+
+          new(**attributes, meet_info:)
+        end
+
+        def self.extract_attributes(element)
+          ATTRIBUTES.each_with_object({}) do |(attribute_name, definition), collected|
+            value = element.attribute(attribute_name)&.value
+            ensure_required_attribute!(attribute_name, definition, value)
+            collected[definition[:key]] = value if value
+          end
+        end
+        private_class_method :extract_attributes
+
+        def self.ensure_required_attribute!(attribute_name, definition, value)
+          return unless definition[:required]
+          return unless value.nil? || value.strip.empty?
+
+          message = "ENTRY #{attribute_name} attribute is required"
+          raise ::Lenex::Parser::ParseError, message
+        end
+        private_class_method :ensure_required_attribute!
+
+        def self.meet_info_from(element)
+          return unless element
+
+          MeetInfo.from_xml(element)
+        end
+        private_class_method :meet_info_from
+      end
+
+      # Value object representing a MEETINFO element.
+      class MeetInfo
+        ATTRIBUTES = {
+          'approved' => :approved,
+          'city' => :city,
+          'course' => :course,
+          'date' => :date,
+          'daytime' => :daytime,
+          'name' => :name,
+          'nation' => :nation,
+          'qualificationtime' => :qualification_time,
+          'state' => :state,
+          'timing' => :timing
+        }.freeze
+
+        attr_reader(*ATTRIBUTES.values, :pool)
+
+        def initialize(pool: nil, **attributes)
+          ATTRIBUTES.each_value do |key|
+            instance_variable_set(:"@#{key}", attributes[key])
+          end
+          @pool = pool
+        end
+
+        def self.from_xml(element)
+          raise ::Lenex::Parser::ParseError, 'MEETINFO element is required' unless element
+
+          attributes = extract_attributes(element)
+          pool = pool_from(element.at_xpath('POOL'))
+
+          new(**attributes, pool:)
+        end
+
+        def self.extract_attributes(element)
+          ATTRIBUTES.each_with_object({}) do |(attribute_name, key), collected|
+            value = element.attribute(attribute_name)&.value
+            collected[key] = value if value
+          end
+        end
+        private_class_method :extract_attributes
+
+        def self.pool_from(element)
+          return unless element
+
+          Pool.from_xml(element)
+        end
+        private_class_method :pool_from
+      end
+
+      # Value object representing a RESULT element.
+      class Result
+        ATTRIBUTES = {
+          'comment' => { key: :comment, required: false },
+          'eventid' => { key: :event_id, required: false },
+          'handicap' => { key: :handicap, required: false },
+          'heatid' => { key: :heat_id, required: false },
+          'lane' => { key: :lane, required: false },
+          'points' => { key: :points, required: false },
+          'reactiontime' => { key: :reaction_time, required: false },
+          'resultid' => { key: :result_id, required: true },
+          'status' => { key: :status, required: false },
+          'swimdistance' => { key: :swim_distance, required: false },
+          'swimtime' => { key: :swim_time, required: true }
+        }.freeze
+
+        attr_reader(*ATTRIBUTES.values.map { |definition| definition[:key] }, :splits)
+
+        def initialize(splits: [], **attributes)
+          ATTRIBUTES.each_value do |definition|
+            key = definition[:key]
+            instance_variable_set(:"@#{key}", attributes[key])
+          end
+          @splits = Array(splits)
+        end
+
+        def self.from_xml(element)
+          raise ::Lenex::Parser::ParseError, 'RESULT element is required' unless element
+
+          attributes = extract_attributes(element)
+          splits = extract_splits(element.at_xpath('SPLITS'))
+
+          new(**attributes, splits:)
+        end
+
+        def self.extract_attributes(element)
+          ATTRIBUTES.each_with_object({}) do |(attribute_name, definition), collected|
+            value = element.attribute(attribute_name)&.value
+            ensure_required_attribute!(attribute_name, definition, value)
+            collected[definition[:key]] = value if value
+          end
+        end
+        private_class_method :extract_attributes
+
+        def self.ensure_required_attribute!(attribute_name, definition, value)
+          return unless definition[:required]
+          return unless value.nil? || value.strip.empty?
+
+          message = "RESULT #{attribute_name} attribute is required"
+          raise ::Lenex::Parser::ParseError, message
+        end
+        private_class_method :ensure_required_attribute!
+
+        def self.extract_splits(collection_element)
+          return [] unless collection_element
+
+          collection_element.xpath('SPLIT').map do |split_element|
+            Split.from_xml(split_element)
+          end
+        end
+        private_class_method :extract_splits
+      end
+
+      # Value object representing a SPLIT element.
+      class Split
+        ATTRIBUTES = {
+          'distance' => { key: :distance, required: true },
+          'swimtime' => { key: :swim_time, required: true }
+        }.freeze
+
+        attr_reader(*ATTRIBUTES.values.map { |definition| definition[:key] })
+
+        def initialize(**attributes)
+          ATTRIBUTES.each_value do |definition|
+            key = definition[:key]
+            instance_variable_set(:"@#{key}", attributes[key])
+          end
+        end
+
+        def self.from_xml(element)
+          raise ::Lenex::Parser::ParseError, 'SPLIT element is required' unless element
+
+          attributes = extract_attributes(element)
+
+          new(**attributes)
+        end
+
+        def self.extract_attributes(element)
+          ATTRIBUTES.each_with_object({}) do |(attribute_name, definition), collected|
+            value = element.attribute(attribute_name)&.value
+            ensure_required_attribute!(attribute_name, definition, value)
+            collected[definition[:key]] = value if value
+          end
+        end
+        private_class_method :extract_attributes
+
+        def self.ensure_required_attribute!(attribute_name, definition, value)
+          return unless definition[:required]
+          return unless value.nil? || value.strip.empty?
+
+          message = "SPLIT #{attribute_name} attribute is required"
+          raise ::Lenex::Parser::ParseError, message
+        end
+        private_class_method :ensure_required_attribute!
       end
 
       # Value object representing a POOL element.
