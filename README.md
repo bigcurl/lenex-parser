@@ -46,6 +46,7 @@ The parser returns a `Lenex::Parser::Objects::Lenex` instance that exposes the t
 - `version` – Lenex schema version string declared in the `<LENEX>` root element.
 - `revision` – Revision identifier provided by the source system.
 - `constructor` – A `Lenex::Parser::Objects::Constructor` with information about who produced the file.
+- `meets` – Array of `Lenex::Parser::Objects::Meet` describing meet level information found under `<MEETS>`.
 
 The constructor object provides these accessors:
 
@@ -60,6 +61,14 @@ The contact object yields:
 - `phone` – Optional phone number if available.
 - `fax` – Optional fax number.
 - `name` – Contact person's full name when supplied.
+
+The meet object exposes:
+
+- `name` – Required meet name taken from the `<MEET>` element.
+- `city` – Required meet city name.
+- `nation` – Required meet nation code.
+- `course` – Optional course attribute describing the pool length.
+- `contact` – Optional `Lenex::Parser::Objects::Contact` for the meet organiser when provided.
 
 ### Error handling
 
