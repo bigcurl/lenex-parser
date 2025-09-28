@@ -48,6 +48,63 @@ module Lenex
         private_class_method :extract_attributes
       end
 
+      # Value object representing a CLUB element.
+      class Club
+        ATTRIBUTES = {
+          'name' => { key: :name, required: true },
+          'name.en' => { key: :name_en, required: false },
+          'shortname' => { key: :shortname, required: false },
+          'shortname.en' => { key: :shortname_en, required: false },
+          'code' => { key: :code, required: false },
+          'nation' => { key: :nation, required: false },
+          'number' => { key: :number, required: false },
+          'region' => { key: :region, required: false },
+          'swrid' => { key: :swrid, required: false },
+          'type' => { key: :type, required: false }
+        }.freeze
+
+        attr_reader(*ATTRIBUTES.values.map { |definition| definition[:key] }, :contact)
+
+        def initialize(contact: nil, **attributes)
+          ATTRIBUTES.each_value do |definition|
+            key = definition[:key]
+            instance_variable_set(:"@#{key}", attributes[key])
+          end
+          @contact = contact
+        end
+
+        def self.from_xml(element)
+          raise ::Lenex::Parser::ParseError, 'CLUB element is required' unless element
+
+          attributes = extract_attributes(element)
+          ensure_required_attributes!(attributes)
+
+          contact_element = element.at_xpath('CONTACT')
+          contact = contact_element ? Contact.from_xml(contact_element) : nil
+
+          new(**attributes, contact:)
+        end
+
+        def self.extract_attributes(element)
+          ATTRIBUTES.each_with_object({}) do |(attribute_name, definition), collected|
+            value = element.attribute(attribute_name)&.value
+            collected[definition[:key]] = value if value
+          end
+        end
+        private_class_method :extract_attributes
+
+        def self.ensure_required_attributes!(attributes)
+          name = attributes[:name]
+          type = attributes[:type]
+
+          return unless name.nil? || name.strip.empty?
+          return if type == 'UNATTACHED'
+
+          raise ::Lenex::Parser::ParseError, 'CLUB name attribute is required'
+        end
+        private_class_method :ensure_required_attributes!
+      end
+
       # Value object representing a CONSTRUCTOR element.
       class Constructor
         ATTRIBUTES = {
@@ -99,14 +156,15 @@ module Lenex
           'result.url' => { key: :result_url, required: false }
         }.freeze
 
-        attr_reader(*ATTRIBUTES.values.map { |definition| definition[:key] }, :contact)
+        attr_reader(*ATTRIBUTES.values.map { |definition| definition[:key] }, :contact, :clubs)
 
-        def initialize(contact: nil, **attributes)
+        def initialize(contact: nil, clubs: [], **attributes)
           ATTRIBUTES.each_value do |definition|
             key = definition[:key]
             instance_variable_set(:"@#{key}", attributes[key])
           end
           @contact = contact
+          @clubs = Array(clubs)
         end
 
         def self.from_xml(element)
@@ -115,8 +173,9 @@ module Lenex
           attributes = extract_attributes(element)
           contact_element = element.at_xpath('CONTACT')
           contact = contact_element ? Contact.from_xml(contact_element) : nil
+          clubs = extract_clubs(element.at_xpath('CLUBS'))
 
-          new(**attributes, contact:)
+          new(**attributes, contact:, clubs:)
         end
 
         def self.extract_attributes(element)
@@ -136,6 +195,13 @@ module Lenex
           raise ::Lenex::Parser::ParseError, message
         end
         private_class_method :ensure_required_attribute!
+
+        def self.extract_clubs(collection_element)
+          return [] unless collection_element
+
+          collection_element.xpath('CLUB').map { |club_element| Club.from_xml(club_element) }
+        end
+        private_class_method :extract_clubs
       end
 
       # Value object representing the LENEX root element.

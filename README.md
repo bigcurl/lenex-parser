@@ -69,6 +69,20 @@ The meet object exposes:
 - `nation` – Required meet nation code.
 - `course` – Optional course attribute describing the pool length.
 - `contact` – Optional `Lenex::Parser::Objects::Contact` for the meet organiser when provided.
+- `clubs` – Array of `Lenex::Parser::Objects::Club` objects describing participating clubs.
+
+The club object exposes:
+
+- `name` – Full club name when provided (required unless the club type is `UNATTACHED`).
+- `name_en` – Optional English representation of the club name.
+- `shortname` / `shortname_en` – Optional abbreviated names for local and English contexts.
+- `code` – Optional national federation club code.
+- `nation` – Optional federation nation code for the club.
+- `number` – Optional differentiator used when a club fields multiple teams.
+- `region` – Optional code for the regional swimming committee.
+- `swrid` – Optional SwimRankings.net identifier.
+- `type` – Optional classification such as `CLUB`, `NATIONALTEAM`, `REGIONALTEAM`, or `UNATTACHED`.
+- `contact` – Optional `Lenex::Parser::Objects::Contact` with meet-specific club contact details.
 
 ### Error handling
 
