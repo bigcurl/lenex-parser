@@ -70,6 +70,7 @@ The meet object exposes:
 - `course` – Optional course attribute describing the pool length.
 - `contact` – Optional `Lenex::Parser::Objects::Contact` for the meet organiser when provided.
 - `clubs` – Array of `Lenex::Parser::Objects::Club` objects describing participating clubs.
+- `sessions` – Array of `Lenex::Parser::Objects::Session` objects capturing the meet schedule.
 
 The club object exposes:
 
@@ -83,6 +84,23 @@ The club object exposes:
 - `swrid` – Optional SwimRankings.net identifier.
 - `type` – Optional classification such as `CLUB`, `NATIONALTEAM`, `REGIONALTEAM`, or `UNATTACHED`.
 - `contact` – Optional `Lenex::Parser::Objects::Contact` with meet-specific club contact details.
+
+The session object exposes:
+
+- `number` – Required session number unique within a meet.
+- `date` – Required session date in `YYYY-MM-DD` format.
+- `course` – Optional pool length overriding the meet-wide course.
+- `daytime` – Optional start time for the session.
+- `endtime` – Optional time the session finished.
+- `max_entries_athlete` – Optional limit on individual entries per athlete for the session.
+- `max_entries_relay` – Optional limit on relay entries per club for the session.
+- `name` – Optional descriptive session name (e.g., "Day 1 – Prelims").
+- `official_meeting` – Optional meeting time for officials.
+- `remarks_judge` – Optional referee remarks.
+- `team_leader_meeting` – Optional meeting time for team leaders.
+- `timing` – Optional timing system information for the session.
+- `touchpad_mode` – Optional touchpad mode description.
+- `warmup_from` / `warmup_until` – Optional warm-up window times.
 
 ### Error handling
 

@@ -105,6 +105,62 @@ module Lenex
         private_class_method :ensure_required_attributes!
       end
 
+      # Value object representing a SESSION element.
+      class Session
+        ATTRIBUTES = {
+          'course' => { key: :course, required: false },
+          'date' => { key: :date, required: true },
+          'daytime' => { key: :daytime, required: false },
+          'endtime' => { key: :endtime, required: false },
+          'maxentriesathlete' => { key: :max_entries_athlete, required: false },
+          'maxentriesrelay' => { key: :max_entries_relay, required: false },
+          'name' => { key: :name, required: false },
+          'number' => { key: :number, required: true },
+          'officialmeeting' => { key: :official_meeting, required: false },
+          'remarksjudge' => { key: :remarks_judge, required: false },
+          'teamleadermeeting' => { key: :team_leader_meeting, required: false },
+          'timing' => { key: :timing, required: false },
+          'touchpadmode' => { key: :touchpad_mode, required: false },
+          'warmupfrom' => { key: :warmup_from, required: false },
+          'warmupuntil' => { key: :warmup_until, required: false }
+        }.freeze
+
+        attr_reader(*ATTRIBUTES.values.map { |definition| definition[:key] })
+
+        def initialize(**attributes)
+          ATTRIBUTES.each_value do |definition|
+            key = definition[:key]
+            instance_variable_set(:"@#{key}", attributes[key])
+          end
+        end
+
+        def self.from_xml(element)
+          raise ::Lenex::Parser::ParseError, 'SESSION element is required' unless element
+
+          attributes = extract_attributes(element)
+
+          new(**attributes)
+        end
+
+        def self.extract_attributes(element)
+          ATTRIBUTES.each_with_object({}) do |(attribute_name, definition), collected|
+            value = element.attribute(attribute_name)&.value
+            ensure_required_attribute!(attribute_name, definition, value)
+            collected[definition[:key]] = value if value
+          end
+        end
+        private_class_method :extract_attributes
+
+        def self.ensure_required_attribute!(attribute_name, definition, value)
+          return unless definition[:required]
+          return unless value.nil? || value.strip.empty?
+
+          message = "SESSION #{attribute_name} attribute is required"
+          raise ::Lenex::Parser::ParseError, message
+        end
+        private_class_method :ensure_required_attribute!
+      end
+
       # Value object representing a CONSTRUCTOR element.
       class Constructor
         ATTRIBUTES = {
@@ -156,15 +212,17 @@ module Lenex
           'result.url' => { key: :result_url, required: false }
         }.freeze
 
-        attr_reader(*ATTRIBUTES.values.map { |definition| definition[:key] }, :contact, :clubs)
+        attr_reader(*ATTRIBUTES.values.map { |definition| definition[:key] },
+                    :contact, :clubs, :sessions)
 
-        def initialize(contact: nil, clubs: [], **attributes)
+        def initialize(contact: nil, clubs: [], sessions: [], **attributes)
           ATTRIBUTES.each_value do |definition|
             key = definition[:key]
             instance_variable_set(:"@#{key}", attributes[key])
           end
           @contact = contact
           @clubs = Array(clubs)
+          @sessions = Array(sessions)
         end
 
         def self.from_xml(element)
@@ -174,8 +232,9 @@ module Lenex
           contact_element = element.at_xpath('CONTACT')
           contact = contact_element ? Contact.from_xml(contact_element) : nil
           clubs = extract_clubs(element.at_xpath('CLUBS'))
+          sessions = extract_sessions(element.at_xpath('SESSIONS'))
 
-          new(**attributes, contact:, clubs:)
+          new(**attributes, contact:, clubs:, sessions:)
         end
 
         def self.extract_attributes(element)
@@ -202,6 +261,15 @@ module Lenex
           collection_element.xpath('CLUB').map { |club_element| Club.from_xml(club_element) }
         end
         private_class_method :extract_clubs
+
+        def self.extract_sessions(collection_element)
+          return [] unless collection_element
+
+          collection_element
+            .xpath('SESSION')
+            .map { |session_element| Session.from_xml(session_element) }
+        end
+        private_class_method :extract_sessions
       end
 
       # Value object representing the LENEX root element.
