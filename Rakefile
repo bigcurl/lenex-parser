@@ -3,6 +3,8 @@
 require 'bundler/gem_tasks'
 require 'rake/testtask'
 require 'rubocop/rake_task'
+require 'yard'
+require 'yard/rake/yardoc_task'
 
 configure_test_task = lambda do |t|
   t.libs << 'test'
@@ -25,11 +27,15 @@ end
 
 RuboCop::RakeTask.new(:rubocop)
 
+YARD::Rake::YardocTask.new(:docs)
+
 desc 'Run full CI pipeline'
 task :ci do
   Rake::Task['test:coverage'].invoke
   Rake::Task[:rubocop].invoke
+  Rake::Task[:docs].invoke
 ensure
   Rake::Task['test:coverage'].reenable
   Rake::Task[:rubocop].reenable
+  Rake::Task[:docs].reenable
 end
