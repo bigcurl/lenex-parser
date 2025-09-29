@@ -27,6 +27,35 @@ class StreamingParserTest < Minitest::Test
     assert_equal 250, lenex.meets.size
   end
 
+  def test_normalize_for_stub_wraps_io
+    data = 'payload'
+    io = StringIO.new(data)
+
+    normalized_data, normalized_io = normalize_for_stub(io)
+
+    assert_equal data, normalized_data
+    refute_same io, normalized_io
+    assert_equal data, normalized_io.read
+  end
+
+  def test_large_lenex_stream_close_returns_self
+    stream = LargeLenexStream.new(1)
+
+    assert_same stream, stream.close
+    assert_nil stream.instance_variable_get(:@segments)
+  end
+
+  def test_extract_with_nil_length_drains_buffer
+    stream = LargeLenexStream.new(0)
+    stream.instance_variable_set(:@buffer, 'payload')
+    stream.instance_variable_set(:@segments, nil)
+
+    data = stream.send(:extract, nil)
+
+    assert_equal 'payload', data
+    assert_equal '', stream.instance_variable_get(:@buffer)
+  end
+
   class LargeLenexStream
     def initialize(meet_count)
       @segments = build_segments(meet_count)

@@ -88,3 +88,31 @@ class DocumentTest < Minitest::Test
     )
   end
 end
+
+class DocumentHandlerTest < Minitest::Test
+  def setup
+    @document = Lenex::Document.new
+    @handler = Lenex::Parser::Sax::DocumentHandler.new(@document)
+  end
+
+  def test_end_document_requires_root
+    error = assert_raises(Lenex::Parser::ParseError) { @handler.end_document }
+
+    assert_equal 'Root element must be LENEX', error.message
+  end
+
+  def test_cdata_block_appends_to_capture
+    Lenex::Parser::Objects::Meet.stub(:from_xml, ->(_) { :meet }) do
+      @handler.start_document
+      @handler.start_element('LENEX', [['version', '3.0']])
+      @handler.start_element('MEET', [])
+
+      @handler.cdata_block(nil)
+      @handler.cdata_block('Example')
+
+      @handler.end_element('MEET')
+    end
+
+    assert_includes @document.meets, :meet
+  end
+end

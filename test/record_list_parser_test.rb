@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'test_helper'
+require 'nokogiri'
 
 module RecordListFixtures
   SAMPLE_XML = <<~XML
@@ -82,6 +83,63 @@ module RecordListFixtures
       'One'
     ]
   }.freeze
+end
+
+class RecordObjectValidationTest < Minitest::Test
+  def test_record_athlete_requires_required_attributes
+    element = Nokogiri::XML(
+      '<ATHLETE birthdate="2000-01-01" lastname="Doe" gender="M" />'
+    ).root
+
+    error = assert_raises(::Lenex::Parser::ParseError) do
+      Lenex::Parser::Objects::RecordAthlete.from_xml(element)
+    end
+
+    assert_equal 'ATHLETE firstname attribute is required', error.message
+  end
+
+  def test_record_relay_position_requires_athlete
+    element = Nokogiri::XML('<RELAYPOSITION number="1" />').root
+
+    error = assert_raises(::Lenex::Parser::ParseError) do
+      Lenex::Parser::Objects::RecordRelayPosition.from_xml(element)
+    end
+
+    assert_equal 'RELAYPOSITION ATHLETE element is required', error.message
+  end
+
+  def test_record_relay_position_requires_number
+    element = Nokogiri::XML('<RELAYPOSITION><ATHLETE /></RELAYPOSITION>').root
+
+    Lenex::Parser::Objects::RecordAthlete.stub(:from_xml, ->(_) { :athlete }) do
+      error = assert_raises(::Lenex::Parser::ParseError) do
+        Lenex::Parser::Objects::RecordRelayPosition.from_xml(element)
+      end
+
+      assert_equal 'RELAYPOSITION number attribute is required', error.message
+    end
+  end
+
+  def test_relay_position_builds_athlete
+    element = Nokogiri::XML('<RELAYPOSITION number="1"><ATHLETE /></RELAYPOSITION>').root
+    athlete = Object.new
+
+    Lenex::Parser::Objects::Athlete.stub(:from_xml, ->(_) { athlete }) do
+      position = Lenex::Parser::Objects::RelayPosition.from_xml(element)
+
+      assert_same athlete, position.athlete
+    end
+  end
+
+  def test_relay_result_requires_result_id
+    element = Nokogiri::XML('<RESULT swimtime="00:50.00" />').root
+
+    error = assert_raises(::Lenex::Parser::ParseError) do
+      Lenex::Parser::Objects::RelayResult.from_xml(element)
+    end
+
+    assert_equal 'RESULT resultid attribute is required', error.message
+  end
 end
 
 module RecordListTestHelpers

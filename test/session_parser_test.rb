@@ -219,6 +219,31 @@ class SessionParserTestBase < Minitest::Test
   private(*SessionParserActualAttributes.instance_methods(false))
 end
 
+class SessionParserHelpersTest < SessionParserTestBase
+  def test_actual_pool_attributes_without_pool
+    expected = {
+      pool_class: nil,
+      pool_lane_min: nil,
+      pool_lane_max: nil,
+      pool_type: nil,
+      pool_temperature: nil
+    }
+
+    assert_equal expected, send(:actual_pool_attributes, nil)
+  end
+
+  def test_actual_fee_schedule_attributes_without_schedule
+    expected = {
+      fee_schedule_class: nil,
+      session_fees_count: 0,
+      session_fee_type: nil,
+      session_fee_value: nil
+    }
+
+    assert_equal expected, send(:actual_fee_schedule_attributes, nil)
+  end
+end
+
 class SessionParserSuccessTest < SessionParserTestBase
   def test_parse_builds_sessions
     session = Lenex::Parser.parse(xml_with_session).meets.fetch(0).sessions.fetch(0)
