@@ -14,14 +14,16 @@ class HandicapParserTest < Minitest::Test
                  [handicap.breast, handicap.free, handicap.medley, handicap.breast_status]
   end
 
-  def test_missing_required_attribute_raises
+  def test_missing_required_attribute_emits_warning
     element = Nokogiri::XML.parse('<HANDICAP free="5" medley="6" />').root
 
-    error = assert_raises(Lenex::Parser::ParseError) do
-      Lenex::Parser::Objects::Handicap.from_xml(element)
+    handicap = nil
+    assert_output('', /HANDICAP breast attribute is required/) do
+      handicap = Lenex::Parser::Objects::Handicap.from_xml(element)
     end
 
-    assert_match(/HANDICAP breast attribute is required/, error.message)
+    refute_nil handicap
+    assert_nil handicap.breast
   end
 
   def test_missing_optional_attributes_are_allowed

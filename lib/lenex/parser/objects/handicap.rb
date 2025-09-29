@@ -6,7 +6,7 @@ module Lenex
       # Value object representing a HANDICAP element.
       class Handicap
         ATTRIBUTES = {
-          'breast' => { key: :breast, required: true },
+          'breast' => { key: :breast, required: true, missing_behavior: :warn },
           'breaststatus' => { key: :breast_status, required: false },
           'exception' => { key: :exception, required: false },
           'free' => { key: :free, required: false },
@@ -54,10 +54,26 @@ module Lenex
 
             attribute_name = ATTRIBUTE_NAME_FOR.fetch(key)
             message = "HANDICAP #{attribute_name} attribute is required"
-            raise ::Lenex::Parser::ParseError, message
+            handle_missing_required_attribute(definition, message)
           end
         end
         private_class_method :ensure_required_attributes!
+
+        def self.handle_missing_required_attribute(definition, message)
+          behavior = definition.fetch(:missing_behavior, :raise)
+          case behavior
+          when :warn
+            emit_warning(message)
+          else
+            raise ::Lenex::Parser::ParseError, message
+          end
+        end
+        private_class_method :handle_missing_required_attribute
+
+        def self.emit_warning(message)
+          warn(message)
+        end
+        private_class_method :emit_warning
 
         ATTRIBUTE_NAME_FOR = ATTRIBUTES.each_with_object({}) do |(attribute_name, definition),
                                                                      mapping|

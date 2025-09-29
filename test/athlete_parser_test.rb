@@ -594,12 +594,19 @@ class AthleteParserValidationTest < AthleteParserTestBase
     assert_match(/SPLIT distance attribute is required/, error.message)
   end
 
-  def test_missing_handicap_breast_raises
+  def test_missing_handicap_breast_emits_warning
     attributes = DEFAULT_HANDICAP_ATTRIBUTES.except('breast')
     xml = build_athlete_xml(components: { handicap_attributes: attributes })
 
-    error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
+    lenex = nil
+    assert_output('', /HANDICAP breast attribute is required/) do
+      lenex = Lenex::Parser.parse(xml)
+    end
 
-    assert_match(/HANDICAP breast attribute is required/, error.message)
+    club = lenex.meets.fetch(0).clubs.fetch(0)
+    handicap = club.athletes.fetch(0).handicap
+
+    refute_nil handicap
+    assert_nil handicap.breast
   end
 end
