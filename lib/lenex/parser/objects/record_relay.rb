@@ -9,7 +9,11 @@ module Lenex
           'name' => :name
         }.freeze
 
-        attr_reader(*ATTRIBUTES.values, :club, :relay_positions)
+        ATTRIBUTE_KEYS = ATTRIBUTES.values.freeze
+        private_constant :ATTRIBUTE_KEYS
+
+        ATTRIBUTE_KEYS.each { |attribute| attr_reader attribute }
+        attr_reader :club, :relay_positions
 
         def initialize(club: nil, relay_positions: [], **attributes)
           ATTRIBUTES.each_value do |key|

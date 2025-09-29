@@ -23,13 +23,11 @@ module Lenex
           'warmupuntil' => { key: :warmup_until, required: false }
         }.freeze
 
-        attr_reader(
-          *ATTRIBUTES.values.map { |definition| definition[:key] },
-          :fee_schedule,
-          :pool,
-          :judges,
-          :events
-        )
+        ATTRIBUTE_KEYS = ATTRIBUTES.values.map { |definition| definition[:key] }.freeze
+        private_constant :ATTRIBUTE_KEYS
+
+        ATTRIBUTE_KEYS.each { |attribute| attr_reader attribute }
+        attr_reader :fee_schedule, :pool, :judges, :events
 
         def initialize(fee_schedule: nil, pool: nil, judges: [], events: [], **attributes)
           ATTRIBUTES.each_value do |definition|

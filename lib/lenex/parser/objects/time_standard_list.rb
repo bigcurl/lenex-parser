@@ -14,11 +14,11 @@ module Lenex
           'type' => { key: :type, required: false }
         }.freeze
 
-        attr_reader(
-          *ATTRIBUTES.values.map { |definition| definition[:key] },
-          :age_group,
-          :time_standards
-        )
+        ATTRIBUTE_KEYS = ATTRIBUTES.values.map { |definition| definition[:key] }.freeze
+        private_constant :ATTRIBUTE_KEYS
+
+        ATTRIBUTE_KEYS.each { |attribute| attr_reader attribute }
+        attr_reader :age_group, :time_standards
 
         def initialize(age_group: nil, time_standards: [], **attributes)
           ATTRIBUTES.each_value do |definition|

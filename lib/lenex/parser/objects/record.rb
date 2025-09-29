@@ -11,14 +11,11 @@ module Lenex
           'comment' => { key: :comment, required: false }
         }.freeze
 
-        attr_reader(
-          *ATTRIBUTES.values.map { |definition| definition[:key] },
-          :meet_info,
-          :swim_style,
-          :athlete,
-          :relay,
-          :splits
-        )
+        ATTRIBUTE_KEYS = ATTRIBUTES.values.map { |definition| definition[:key] }.freeze
+        private_constant :ATTRIBUTE_KEYS
+
+        ATTRIBUTE_KEYS.each { |attribute| attr_reader attribute }
+        attr_reader :meet_info, :swim_style, :athlete, :relay, :splits
 
         def initialize(associations: {}, **attributes)
           ATTRIBUTES.each_value do |definition|

@@ -23,12 +23,11 @@ module Lenex
           'swrid' => { key: :swrid, required: false }
         }.freeze
 
-        attr_reader(
-          *ATTRIBUTES.values.map { |definition| definition[:key] },
-          :handicap,
-          :entries,
-          :results
-        )
+        ATTRIBUTE_KEYS = ATTRIBUTES.values.map { |definition| definition[:key] }.freeze
+        private_constant :ATTRIBUTE_KEYS
+
+        ATTRIBUTE_KEYS.each { |attribute| attr_reader attribute }
+        attr_reader :handicap, :entries, :results
 
         def initialize(handicap: nil, entries: [], results: [], **attributes)
           ATTRIBUTES.each_value do |definition|

@@ -11,7 +11,11 @@ module Lenex
           'status' => { key: :status, required: false }
         }.freeze
 
-        attr_reader(*ATTRIBUTES.values.map { |definition| definition[:key] }, :athlete)
+        ATTRIBUTE_KEYS = ATTRIBUTES.values.map { |definition| definition[:key] }.freeze
+        private_constant :ATTRIBUTE_KEYS
+
+        ATTRIBUTE_KEYS.each { |attribute| attr_reader attribute }
+        attr_reader :athlete
 
         def initialize(athlete:, **attributes)
           ATTRIBUTES.each_value do |definition|

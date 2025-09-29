@@ -9,7 +9,11 @@ module Lenex
           'swimtime' => { key: :swim_time, required: true }
         }.freeze
 
-        attr_reader(*ATTRIBUTES.values.map { |definition| definition[:key] }, :swim_style)
+        ATTRIBUTE_KEYS = ATTRIBUTES.values.map { |definition| definition[:key] }.freeze
+        private_constant :ATTRIBUTE_KEYS
+
+        ATTRIBUTE_KEYS.each { |attribute| attr_reader attribute }
+        attr_reader :swim_style
 
         def initialize(swim_style:, **attributes)
           ATTRIBUTES.each_value do |definition|

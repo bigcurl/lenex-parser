@@ -11,7 +11,10 @@ module Lenex
           'version' => { key: :version, required: true }
         }.freeze
 
-        attr_reader(*ATTRIBUTES.values.map { |definition| definition[:key] })
+        ATTRIBUTE_KEYS = ATTRIBUTES.values.map { |definition| definition[:key] }.freeze
+        private_constant :ATTRIBUTE_KEYS
+
+        ATTRIBUTE_KEYS.each { |attribute| attr_reader attribute }
 
         def initialize(**attributes)
           ATTRIBUTES.each_value do |definition|

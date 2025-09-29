@@ -18,7 +18,11 @@ module Lenex
           'timing' => :timing
         }.freeze
 
-        attr_reader(*ATTRIBUTES.values, :pool)
+        ATTRIBUTE_KEYS = ATTRIBUTES.values.freeze
+        private_constant :ATTRIBUTE_KEYS
+
+        ATTRIBUTE_KEYS.each { |attribute| attr_reader attribute }
+        attr_reader :pool
 
         def initialize(pool: nil, **attributes)
           ATTRIBUTES.each_value do |key|

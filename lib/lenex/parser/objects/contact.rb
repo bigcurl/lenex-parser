@@ -20,7 +20,10 @@ module Lenex
           'internet' => :internet
         }.freeze
 
-        attr_reader(*ATTRIBUTES.values)
+        ATTRIBUTE_KEYS = ATTRIBUTES.values.freeze
+        private_constant :ATTRIBUTE_KEYS
+
+        ATTRIBUTE_KEYS.each { |attribute| attr_reader attribute }
 
         def initialize(**attributes)
           ATTRIBUTES.each_value do |key|

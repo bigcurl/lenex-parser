@@ -101,6 +101,9 @@ module Lenex
           'result.url' => { key: :result_url, required: false }
         }.freeze
 
+        ATTRIBUTE_KEYS = ATTRIBUTES.values.map { |definition| definition[:key] }.freeze
+        private_constant :ATTRIBUTE_KEYS
+
         ASSOCIATION_DEFAULTS = {
           contact: nil,
           clubs: [],
@@ -117,8 +120,11 @@ module Lenex
           entry_schedule: nil
         }.freeze
 
-        attr_reader(*ATTRIBUTES.values.map { |definition| definition[:key] },
-                    *ASSOCIATION_DEFAULTS.keys)
+        ASSOCIATION_KEYS = ASSOCIATION_DEFAULTS.keys.freeze
+        private_constant :ASSOCIATION_KEYS
+
+        ATTRIBUTE_KEYS.each { |attribute| attr_reader attribute }
+        ASSOCIATION_KEYS.each { |attribute| attr_reader attribute }
 
         def initialize(**attributes)
           ATTRIBUTES.each_value do |definition|
