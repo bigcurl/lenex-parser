@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'document/serializer'
+
 module Lenex
   # Document models the <LENEX> root element of a Lenex file.
   # It exposes the constructor metadata and the collections that hang off the
@@ -127,6 +129,13 @@ module Lenex
         constructor: @constructor,
         collections: collections_payload
       )
+    end
+
+    # Serialises the document into Lenex XML.
+    #
+    # @return [String]
+    def to_xml
+      Serializer.new(self).to_xml
     end
 
     private

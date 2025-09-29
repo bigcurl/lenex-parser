@@ -110,8 +110,12 @@ require 'lenex/parser/objects'
 
 document = Lenex::Document.new
 
-document.constructor[:name] = 'LENEX Builder'
-document.constructor[:version] = '1.2.3'
+document.constructor = Lenex::Parser::Objects::Constructor.new(
+  name: 'LENEX Builder',
+  registration: 'Example Org',
+  version: '1.2.3',
+  contact: Lenex::Parser::Objects::Contact.new(email: 'support@example.com')
+)
 
 meet = Lenex::Parser::Objects::Meet.new(
   name: 'City Championships',
@@ -123,6 +127,14 @@ document.add_meet(meet)
 
 document.record_lists # => []
 document.time_standard_lists # => []
+
+# Export the document to Lenex XML
+xml = document.to_xml
+
+File.write('export.lenex', xml)
+
+# See examples/build_and_export_document.rb for a complete script that
+# assembles meets, record lists, and time standards before exporting.
 ```
 
 If you have already required `lenex-parser`, the document builder and object model are loaded and you can omit the more granular requires shown above. `Lenex::Document::ConstructorMetadata` normalizes all keys to symbols so you can pass either strings or symbols when writing attributes (e.g., `constructor['contact'] = contact_details`). Each helper method returns the object you passed in, making it easy to chain builder flows.
@@ -290,6 +302,7 @@ your workflow requires. Because all nested collections are plain arrays, you can
 reuse the same patterns shown in the traversal examples to iterate over record
 lists, time standards, relay teams, or any other Lenex section you need to
 render.
+If you have already required `lenex-parser`, the document builder and object model are loaded and you can omit the more granular requires shown above. `Lenex::Document::ConstructorMetadata` normalizes all keys to symbols so you can inspect parsed metadata prior to replacing it with a full `Lenex::Parser::Objects::Constructor`. When exporting, assign a constructor object as shown above to satisfy the Lenex schema requirements. Each helper method returns the object you passed in, making it easy to chain builder flows.
 ### Parsing zipped Lenex files
 
 `Lenex::Parser.parse` also recognises ZIP archives that contain a `.lef` or `.xml` payload and automatically extracts the first matching file. This makes it easy to work with the compressed exports that many federation systems produce:
