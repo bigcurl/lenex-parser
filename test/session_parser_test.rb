@@ -16,6 +16,9 @@ module SessionParserTestHelper
             <SESSIONS>
               <SESSION number="1" date="2024-05-01" course="LCM" daytime="08:00" endtime="12:15">
                 <POOL lanemin="1" lanemax="8" type="INDOOR" temperature="27" />
+                <FEES>
+                  <FEE currency="EUR" type="ATHLETE" value="1500" />
+                </FEES>
                 <JUDGES>
                   <JUDGE officialid="OFF1" role="REF" />
                 </JUDGES>
@@ -84,19 +87,12 @@ module SessionParserTestHelper
   end
 end
 
-class SessionParserTestBase < Minitest::Test
-  include SessionParserTestHelper
-
-  private
-
+module SessionParserExpectedAttributes
   def expected_session_attributes
-    base_session_attributes.merge(expected_pool_attributes).merge(expected_judge_attributes)
-  end
-
-  def actual_session_attributes(session)
-    base_actual_attributes(session)
-      .merge(actual_pool_attributes(session.pool))
-      .merge(actual_judge_attributes(session.judges))
+    base_session_attributes
+      .merge(expected_pool_attributes)
+      .merge(expected_fee_schedule_attributes)
+      .merge(expected_judge_attributes)
   end
 
   def base_session_attributes
@@ -127,6 +123,24 @@ class SessionParserTestBase < Minitest::Test
       judge_official_id: 'OFF1',
       judge_role: 'REF'
     }
+  end
+
+  def expected_fee_schedule_attributes
+    {
+      fee_schedule_class: Lenex::Parser::Objects::FeeSchedule,
+      session_fees_count: 1,
+      session_fee_type: 'ATHLETE',
+      session_fee_value: '1500'
+    }
+  end
+end
+
+module SessionParserActualAttributes
+  def actual_session_attributes(session)
+    base_actual_attributes(session)
+      .merge(actual_pool_attributes(session.pool))
+      .merge(actual_fee_schedule_attributes(session.fee_schedule))
+      .merge(actual_judge_attributes(session.judges))
   end
 
   def base_actual_attributes(session)
@@ -172,6 +186,37 @@ class SessionParserTestBase < Minitest::Test
       pool_temperature: nil
     }
   end
+
+  def actual_fee_schedule_attributes(fee_schedule)
+    return empty_fee_schedule_attributes unless fee_schedule
+
+    fee = fee_schedule.fees.first
+
+    {
+      fee_schedule_class: fee_schedule.class,
+      session_fees_count: fee_schedule.fees.length,
+      session_fee_type: fee&.type,
+      session_fee_value: fee&.value
+    }
+  end
+
+  def empty_fee_schedule_attributes
+    {
+      fee_schedule_class: nil,
+      session_fees_count: 0,
+      session_fee_type: nil,
+      session_fee_value: nil
+    }
+  end
+end
+
+class SessionParserTestBase < Minitest::Test
+  include SessionParserTestHelper
+  include SessionParserExpectedAttributes
+  include SessionParserActualAttributes
+
+  private(*SessionParserExpectedAttributes.instance_methods(false))
+  private(*SessionParserActualAttributes.instance_methods(false))
 end
 
 class SessionParserSuccessTest < SessionParserTestBase

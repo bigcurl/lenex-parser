@@ -2,50 +2,55 @@
 
 require 'test_helper'
 
-module AthleteParserXmlHelper
+module AthleteParserXmlComponents
   module_function
 
-  def build_athlete_xml(athlete_attributes:, entry_attributes:, meet_info_attributes:,
-                        result_attributes:, split_attributes:)
-    <<~XML
-      <LENEX version="3.0">
-        <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
-          <CONTACT email="support@example.com" />
-        </CONSTRUCTOR>
-        <MEETS>
-          <MEET name="Spring Invitational" city="Berlin" nation="GER">
-            <CLUBS>
-              <CLUB name="Berlin Swim" nation="GER">
-                #{athletes_element(athlete_attributes:, entry_attributes:, meet_info_attributes:, result_attributes:, split_attributes:)}
-              </CLUB>
-            </CLUBS>
-          </MEET>
-        </MEETS>
-      </LENEX>
-    XML
-  end
-
-  def athletes_element(athlete_attributes:, entry_attributes:, meet_info_attributes:,
-                       result_attributes:, split_attributes:)
+  def athletes_element(athlete_attributes:, components:)
     <<~XML
       <ATHLETES>
-        #{athlete_element(athlete_attributes:, entry_attributes:, meet_info_attributes:, result_attributes:, split_attributes:)}
+        #{athlete_element(athlete_attributes:, components:)}
       </ATHLETES>
     XML
   end
 
-  def athlete_element(athlete_attributes:, entry_attributes:, meet_info_attributes:,
-                      result_attributes:, split_attributes:)
-    formatted = format_attributes(athlete_attributes)
-    entries_xml = entry_attributes ? entries_element(entry_attributes:, meet_info_attributes:) : ''
-    results_xml = result_attributes ? results_element(result_attributes:, split_attributes:) : ''
+  def athlete_element(athlete_attributes:, components:)
+    body_xml = athlete_components_xml(components)
 
     <<~XML
-      <ATHLETE #{formatted}>
-        #{entries_xml}
-        #{results_xml}
+      <ATHLETE #{format_attributes(athlete_attributes)}>
+        #{body_xml}
       </ATHLETE>
     XML
+  end
+
+  def athlete_components_xml(components)
+    [
+      optional_handicap_xml(components[:handicap_attributes]),
+      optional_entries_xml(components[:entry_attributes], components[:meet_info_attributes]),
+      optional_results_xml(components[:result_attributes], components[:split_attributes])
+    ].compact.join("\n        ")
+  end
+
+  def optional_handicap_xml(attributes)
+    return unless attributes
+
+    handicap_element(attributes)
+  end
+
+  def optional_entries_xml(entry_attributes, meet_info_attributes)
+    return unless entry_attributes
+
+    entries_element(entry_attributes:, meet_info_attributes:)
+  end
+
+  def optional_results_xml(result_attributes, split_attributes)
+    return unless result_attributes
+
+    results_element(result_attributes:, split_attributes:)
+  end
+
+  def handicap_element(attributes)
+    "<HANDICAP #{format_attributes(attributes)} />"
   end
 
   def entries_element(entry_attributes:, meet_info_attributes:)
@@ -114,6 +119,29 @@ module AthleteParserXmlHelper
   end
 end
 
+module AthleteParserXmlHelper
+  module_function
+
+  def build_athlete_xml(athlete_attributes:, components:)
+    <<~XML
+      <LENEX version="3.0">
+        <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
+          <CONTACT email="support@example.com" />
+        </CONSTRUCTOR>
+        <MEETS>
+          <MEET name="Spring Invitational" city="Berlin" nation="GER">
+            <CLUBS>
+              <CLUB name="Berlin Swim" nation="GER">
+                #{AthleteParserXmlComponents.athletes_element(athlete_attributes:, components:)}
+              </CLUB>
+            </CLUBS>
+          </MEET>
+        </MEETS>
+      </LENEX>
+    XML
+  end
+end
+
 module AthleteParserDefaults
   DEFAULT_MEET_INFO_ATTRIBUTES = {
     'city' => 'Hamburg',
@@ -175,6 +203,16 @@ module AthleteParserDefaults
     'passport' => 'C1234567',
     'status' => 'ROOKIE',
     'swrid' => '123456'
+  }.freeze
+
+  DEFAULT_HANDICAP_ATTRIBUTES = {
+    'breast' => '5',
+    'breaststatus' => 'CONFIRMED',
+    'exception' => 'WPS1',
+    'free' => '7',
+    'freestatus' => 'NATIONAL',
+    'medley' => '6',
+    'medleystatus' => 'REVIEW'
   }.freeze
 end
 
@@ -267,6 +305,16 @@ end
 module AthleteParserActualExtractors
   include AthleteParserAttributeReaders
 
+  HANDICAP_ATTRIBUTE_READERS = %i[
+    breast
+    breast_status
+    exception
+    free
+    free_status
+    medley
+    medley_status
+  ].freeze
+
   def actual_athlete_attributes(athlete)
     attributes = athlete_attribute_readers.each_with_object(
       { athlete_class: athlete.class }
@@ -316,30 +364,19 @@ module AthleteParserActualExtractors
       collected[key] = split.public_send(key)
     end
   end
-end
 
-class AthleteParserTestBase < Minitest::Test
-  include AthleteParserDefaults
-  include AthleteParserActualExtractors
+  def actual_handicap_attributes(handicap)
+    return unless handicap
 
-  private
-
-  def build_athlete_xml(athlete_attributes: DEFAULT_ATHLETE_ATTRIBUTES,
-                        entry_attributes: DEFAULT_ENTRY_ATTRIBUTES,
-                        meet_info_attributes: DEFAULT_MEET_INFO_ATTRIBUTES,
-                        result_attributes: DEFAULT_RESULT_ATTRIBUTES,
-                        split_attributes: DEFAULT_SPLIT_ATTRIBUTES)
-    AthleteParserXmlHelper.build_athlete_xml(
-      athlete_attributes:,
-      entry_attributes:,
-      meet_info_attributes:,
-      result_attributes:,
-      split_attributes:
-    )
+    HANDICAP_ATTRIBUTE_READERS.each_with_object(
+      { handicap_class: handicap.class }
+    ) do |key, collected|
+      collected[key] = handicap.public_send(key)
+    end
   end
 end
 
-class AthleteParserSuccessTest < AthleteParserTestBase
+module AthleteParserExpectationConstants
   EXPECTED_ATHLETE_ATTRIBUTES = {
     athlete_class: Lenex::Parser::Objects::Athlete,
     athlete_id: 'A1',
@@ -413,14 +450,54 @@ class AthleteParserSuccessTest < AthleteParserTestBase
     swim_time: '00:25:00.10'
   }.freeze
 
+  EXPECTED_HANDICAP_ATTRIBUTES = {
+    handicap_class: Lenex::Parser::Objects::Handicap,
+    breast: '5',
+    breast_status: 'CONFIRMED',
+    exception: 'WPS1',
+    free: '7',
+    free_status: 'NATIONAL',
+    medley: '6',
+    medley_status: 'REVIEW'
+  }.freeze
+
   EXPECTED_SUMMARY = {
     athlete: EXPECTED_ATHLETE_ATTRIBUTES,
     entry: EXPECTED_ENTRY_ATTRIBUTES,
     meet_info: EXPECTED_MEET_INFO_ATTRIBUTES,
     result: EXPECTED_RESULT_ATTRIBUTES,
-    split: EXPECTED_SPLIT_ATTRIBUTES
+    split: EXPECTED_SPLIT_ATTRIBUTES,
+    handicap: EXPECTED_HANDICAP_ATTRIBUTES
   }.freeze
+end
 
+class AthleteParserTestBase < Minitest::Test
+  include AthleteParserDefaults
+  include AthleteParserActualExtractors
+  include AthleteParserExpectationConstants
+
+  COMPONENT_DEFAULTS = {
+    handicap_attributes: DEFAULT_HANDICAP_ATTRIBUTES,
+    entry_attributes: DEFAULT_ENTRY_ATTRIBUTES,
+    meet_info_attributes: DEFAULT_MEET_INFO_ATTRIBUTES,
+    result_attributes: DEFAULT_RESULT_ATTRIBUTES,
+    split_attributes: DEFAULT_SPLIT_ATTRIBUTES
+  }.freeze
+  private_constant :COMPONENT_DEFAULTS
+
+  private
+
+  def build_athlete_xml(athlete_attributes: DEFAULT_ATHLETE_ATTRIBUTES, components: {})
+    merged_components = COMPONENT_DEFAULTS.merge(components)
+
+    AthleteParserXmlHelper.build_athlete_xml(
+      athlete_attributes:,
+      components: merged_components
+    )
+  end
+end
+
+class AthleteParserSuccessTest < AthleteParserTestBase
   def test_parse_builds_athlete_entries_and_results
     xml = build_athlete_xml
     club = Lenex::Parser.parse(xml).meets.fetch(0).clubs.fetch(0)
@@ -440,7 +517,8 @@ class AthleteParserSuccessTest < AthleteParserTestBase
       entry: actual_entry_attributes(entry),
       meet_info: actual_meet_info_attributes(entry.meet_info),
       result: actual_result_attributes(result),
-      split: actual_split_attributes(result.splits.fetch(0))
+      split: actual_split_attributes(result.splits.fetch(0)),
+      handicap: actual_handicap_attributes(athlete.handicap)
     }
   end
 end
@@ -466,7 +544,7 @@ class AthleteParserValidationTest < AthleteParserTestBase
 
   def test_missing_entry_event_id_raises
     attributes = DEFAULT_ENTRY_ATTRIBUTES.except('eventid')
-    xml = build_athlete_xml(entry_attributes: attributes)
+    xml = build_athlete_xml(components: { entry_attributes: attributes })
 
     error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
 
@@ -475,7 +553,7 @@ class AthleteParserValidationTest < AthleteParserTestBase
 
   def test_missing_result_swim_time_raises
     attributes = DEFAULT_RESULT_ATTRIBUTES.except('swimtime')
-    xml = build_athlete_xml(result_attributes: attributes)
+    xml = build_athlete_xml(components: { result_attributes: attributes })
 
     error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
 
@@ -484,10 +562,19 @@ class AthleteParserValidationTest < AthleteParserTestBase
 
   def test_missing_split_distance_raises
     attributes = DEFAULT_SPLIT_ATTRIBUTES.except('distance')
-    xml = build_athlete_xml(split_attributes: attributes)
+    xml = build_athlete_xml(components: { split_attributes: attributes })
 
     error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
 
     assert_match(/SPLIT distance attribute is required/, error.message)
+  end
+
+  def test_missing_handicap_breast_raises
+    attributes = DEFAULT_HANDICAP_ATTRIBUTES.except('breast')
+    xml = build_athlete_xml(components: { handicap_attributes: attributes })
+
+    error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
+
+    assert_match(/HANDICAP breast attribute is required/, error.message)
   end
 end
