@@ -3,6 +3,7 @@
 require 'test_helper'
 require 'zip'
 require 'stringio'
+require 'tmpdir'
 
 class ParserZipTest < Minitest::Test
   SAMPLE_XML = <<~XML
@@ -31,6 +32,18 @@ class ParserZipTest < Minitest::Test
 
     assert_equal 'Example Org', lenex.constructor.registration
     assert_equal 'support@example.com', lenex.constructor.contact.email
+  end
+
+  def test_parse_accepts_zipped_file_path
+    Dir.mktmpdir do |dir|
+      path = File.join(dir, 'sample.lenex.zip')
+      ::File.binwrite(path, build_zip(SAMPLE_XML))
+
+      lenex = Lenex::Parser.parse(path)
+
+      assert_equal 'Lenex Builder', lenex.constructor.name
+      assert_equal 'Support Team', lenex.constructor.contact.name
+    end
   end
 
   private

@@ -56,16 +56,67 @@ module Lenex
 
     def normalize_source(source)
       io = if source.respond_to?(:read)
-             source.tap { |stream| stream.binmode if stream.respond_to?(:binmode) }
+             ensure_binmode(source)
+           elsif path_argument?(source)
+             open_path(source)
            else
-             StringIO.new(String(source)).tap do |string_io|
-               string_io.binmode if string_io.respond_to?(:binmode)
-             end
+             string_io_for(source)
            end
 
       ensure_rewindable_io(io)
     end
     private_class_method :normalize_source
+
+    def path_argument?(source)
+      return false unless path_like?(source)
+      return false if SourceClassifier.xml_payload?(source)
+      return false if SourceClassifier.zip_payload?(source)
+
+      true
+    end
+    private_class_method :path_argument?
+
+    def ensure_binmode(stream)
+      stream.tap { |io| io.binmode if io.respond_to?(:binmode) }
+    end
+    private_class_method :ensure_binmode
+
+    def path_like?(source)
+      path = extract_path(source)
+      return false unless path
+
+      ::File.file?(path) && ::File.readable?(path)
+    rescue TypeError
+      false
+    end
+    private_class_method :path_like?
+
+    def open_path(source)
+      path = extract_path(source)
+      ::File.open(path, 'rb')
+    end
+    private_class_method :open_path
+
+    def string_io_for(source)
+      StringIO.new(String(source)).tap do |string_io|
+        string_io.binmode if string_io.respond_to?(:binmode)
+      end
+    end
+    private_class_method :string_io_for
+
+    def extract_path(source)
+      path = if source.respond_to?(:to_path)
+               source.to_path
+             elsif source.is_a?(String)
+               source
+             end
+
+      return unless path
+      return if path.include?("\0")
+
+      path
+    end
+    private_class_method :extract_path
 
     def zip_archive?(io)
       read_signature(io) == ZipSource::SIGNATURE
@@ -92,5 +143,42 @@ module Lenex
       end
     end
     private_class_method :ensure_rewindable_io
+  end
+end
+
+module Lenex
+  module Parser
+    # Internal heuristics for deciding whether a value is a filesystem path or
+    # inline XML/ZIP payload.
+    module SourceClassifier
+      module_function
+
+      def xml_payload?(source)
+        payload = String(source)
+        bytes = payload.b
+        bytes = strip_utf8_bom(bytes)
+        stripped = bytes.lstrip
+
+        stripped.start_with?('<')
+      rescue Encoding::CompatibilityError, TypeError
+        false
+      end
+
+      def zip_payload?(source)
+        bytes = String(source).b
+
+        bytes.start_with?(ZipSource::SIGNATURE)
+      rescue Encoding::CompatibilityError, TypeError
+        false
+      end
+
+      def strip_utf8_bom(bytes)
+        return bytes unless bytes.start_with?("\xEF\xBB\xBF".b)
+
+        bytes.byteslice(3, bytes.bytesize - 3) || ''.b
+      end
+      module_function :strip_utf8_bom
+      private_class_method :strip_utf8_bom
+    end
   end
 end

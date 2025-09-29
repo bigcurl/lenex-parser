@@ -55,7 +55,15 @@ puts "Built by: #{lenex.constructor.name} (#{lenex.constructor.version})"
 puts "Contact email: #{lenex.constructor.contact.email}"
 ```
 
-`Lenex::Parser.parse` accepts any IO-like object (such as a `File` opened in binary mode) or a raw XML string. When given an IO it reads chunk-by-chunk, emitting SAX events into the builder so the full XML tree is never loaded at once.
+`Lenex::Parser.parse` accepts any IO-like object (such as a `File` opened in binary mode) or a raw XML string. When given an IO it reads chunk-by-chunk, emitting SAX events into the builder so the full XML tree is never loaded at once. You can also hand it a filesystem path (as a `String` or `Pathname`) and the parser will open the file in binary mode for you before streaming. Strings that contain XML or ZIP bytes are always treated as in-memory payloads, even if a file with the same name exists on disk.
+
+```ruby
+# Parse directly from a file path or Pathname
+require 'pathname'
+
+lenex = Lenex::Parser.parse('meet.lenex')
+lenex = Lenex::Parser.parse(Pathname.new('meet.lenex.zip'))
+```
 
 ### Building documents incrementally
 
@@ -96,6 +104,8 @@ zip_data = File.binread('meet.lenex.zip')
 lenex = Lenex::Parser.parse(zip_data)
 puts lenex.constructor.name
 ```
+
+`zip_data` can come from anywhere—an HTTP response body, a database blob, or any other in-memory string. The parser inspects the leading bytes to decide whether to unzip or stream the XML directly, so no extra branching is required at the call site.
 
 The parser lazily loads the optional `rubyzip` dependency the first time a ZIP archive is encountered. Install it ahead of time with `gem install rubyzip` (or add it to your Gemfile) to keep parsing seamless in production environments.
 
