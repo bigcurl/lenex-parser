@@ -65,6 +65,41 @@ lenex = Lenex::Parser.parse('meet.lenex')
 lenex = Lenex::Parser.parse(Pathname.new('meet.lenex.zip'))
 ```
 
+#### Traversing deeply nested data
+
+The parser returns a `Lenex::Parser::Objects::Lenex` instance whose child
+collections expose plain Ruby arrays. You can use familiar Enumerable helpers to
+drill into the object graph and extract the information you need—even when it
+lives several levels deep in the document.
+
+```ruby
+lenex = Lenex::Parser.parse('meet.lenex')
+
+# Grab a specific session by number and inspect one of its events.
+first_meet = lenex.meets.first
+session_one = first_meet.sessions.detect { |session| session.number == '1' }
+first_event = session_one.events.first
+
+puts "Event ##{first_event.number} uses #{first_event.swim_style.stroke}"
+
+# Walk from the meet down to a particular athlete entry.
+clubs = first_meet.clubs
+sprinter = clubs.flat_map(&:athletes).detect { |athlete| athlete.last_name == 'Phelps' }
+entry = sprinter.entries.detect { |e| e.event_id == first_event.event_id }
+
+puts "Lane #{entry.lane} entry time: #{entry.entry_time}"
+
+# Pull the same athlete's official result if it exists.
+result = sprinter.results.find { |r| r.event_id == first_event.event_id }
+puts "Final time: #{result&.swim_time || 'not recorded'}"
+```
+
+Every object provides reader methods that mirror the Lenex schema. For example,
+`Lenex::Parser::Objects::Club#athletes` returns an array of
+`Lenex::Parser::Objects::Athlete`, and each athlete exposes `entries`, `results`,
+and `handicap`. The nested arrays are regular Ruby collections, so idioms such
+as `flat_map`, `detect`, or `group_by` work out of the box.
+
 ### Building documents incrementally
 
 The gem also exposes a lightweight `Lenex::Document` model for callers that need to build Lenex payloads programmatically before exporting them. The class mirrors the `<LENEX>` root element and provides helpers for accumulating constructor metadata as well as meet, record list, and time-standard list entries.
@@ -91,6 +126,170 @@ document.time_standard_lists # => []
 ```
 
 If you have already required `lenex-parser`, the document builder and object model are loaded and you can omit the more granular requires shown above. `Lenex::Document::ConstructorMetadata` normalizes all keys to symbols so you can pass either strings or symbols when writing attributes (e.g., `constructor['contact'] = contact_details`). Each helper method returns the object you passed in, making it easy to chain builder flows.
+
+#### Building a larger document
+
+The value objects under `Lenex::Parser::Objects` accept keyword arguments that
+mirror their XML attributes. You can compose them to build fully fledged Lenex
+payloads before streaming them back out of your application. The following
+example assembles a meet with one session, one event, and a single athlete
+entry.
+
+```ruby
+require 'lenex/document'
+require 'lenex/parser/objects'
+require 'nokogiri'
+
+document = Lenex::Document.new(version: '3.0', revision: '2024.1')
+
+contact = Lenex::Parser::Objects::Contact.new(
+  name: 'Jane Doe',
+  email: 'jane.doe@example.com',
+  phone: '+49 30 1234567'
+)
+
+constructor = Lenex::Parser::Objects::Constructor.new(
+  name: 'My Meet Manager',
+  registration: 'City Aquatics',
+  version: '2.5.0',
+  contact: contact
+)
+
+document.constructor = constructor
+
+swim_style = Lenex::Parser::Objects::SwimStyle.new(
+  distance: '100',
+  relay_count: '1',
+  stroke: 'FREE'
+)
+
+event = Lenex::Parser::Objects::Event.new(
+  event_id: 'E1',
+  number: '1',
+  round: 'PRE',
+  swim_style: swim_style
+)
+
+session = Lenex::Parser::Objects::Session.new(
+  number: '1',
+  date: '2024-05-18',
+  name: 'Morning Heats',
+  events: [event]
+)
+
+athlete = Lenex::Parser::Objects::Athlete.new(
+  athlete_id: 'A1',
+  first_name: 'Lena',
+  last_name: 'Schmidt',
+  gender: 'F',
+  birthdate: '2006-02-14',
+  entries: [
+    Lenex::Parser::Objects::Entry.new(
+      event_id: event.event_id,
+      entry_time: '00:57.34',
+      lane: '4'
+    )
+  ]
+)
+
+club = Lenex::Parser::Objects::Club.new(
+  name: 'City Aquatics',
+  nation: 'GER',
+  athletes: [athlete]
+)
+
+meet = Lenex::Parser::Objects::Meet.new(
+  name: 'City Championships',
+  city: 'Berlin',
+  nation: 'GER',
+  sessions: [session],
+  clubs: [club]
+)
+
+document.add_meet(meet)
+
+lenex = document.build_lenex
+```
+
+At this point `lenex` is a `Lenex::Parser::Objects::Lenex` instance populated
+with your meet, ready to be serialised or further enriched.
+
+#### Exporting to XML and saving to disk
+
+The gem focuses on parsing and provides the document builder for convenience;
+it does not ship with a dedicated serializer. Because the value objects expose
+plain Ruby readers, you can use `Nokogiri::XML::Builder` (already a dependency
+of the gem) to convert the object graph back into Lenex XML and write it to
+disk:
+
+```ruby
+lenex = document.build_lenex
+
+xml = Nokogiri::XML::Builder.new(encoding: 'UTF-8') do |builder|
+  builder.LENEX(version: lenex.version, revision: lenex.revision) do
+    builder.CONSTRUCTOR(name: lenex.constructor.name,
+                        registration: lenex.constructor.registration,
+                        version: lenex.constructor.version) do
+      builder.CONTACT(email: lenex.constructor.contact.email)
+    end
+
+    builder.MEETS do
+      lenex.meets.each do |m|
+        builder.MEET(name: m.name, city: m.city, nation: m.nation) do
+          builder.SESSIONS do
+            m.sessions.each do |s|
+              builder.SESSION(number: s.number, date: s.date) do
+                builder.EVENTS do
+                  s.events.each do |e|
+                    builder.EVENT(eventid: e.event_id, number: e.number) do
+                      style = e.swim_style
+                      builder.SWIMSTYLE(distance: style.distance,
+                                        relaycount: style.relay_count,
+                                        stroke: style.stroke)
+                    end
+                  end
+                end
+              end
+            end
+          end
+
+          builder.CLUBS do
+            m.clubs.each do |club|
+              builder.CLUB(name: club.name, nation: club.nation) do
+                builder.ATHLETES do
+                  club.athletes.each do |athlete|
+                    builder.ATHLETE(athleteid: athlete.athlete_id,
+                                     firstname: athlete.first_name,
+                                     lastname: athlete.last_name,
+                                     gender: athlete.gender,
+                                     birthdate: athlete.birthdate) do
+                      builder.ENTRIES do
+                        athlete.entries.each do |entry|
+                          builder.ENTRY(eventid: entry.event_id,
+                                        entrytime: entry.entry_time,
+                                        lane: entry.lane)
+                        end
+                      end
+                    end
+                  end
+                end
+              end
+            end
+          end
+        end
+      end
+    end
+  end
+end.to_xml
+
+File.binwrite('city-championships.lenex', xml)
+```
+
+Feel free to expand the builder logic with the additional optional attributes
+your workflow requires. Because all nested collections are plain arrays, you can
+reuse the same patterns shown in the traversal examples to iterate over record
+lists, time standards, relay teams, or any other Lenex section you need to
+render.
 ### Parsing zipped Lenex files
 
 `Lenex::Parser.parse` also recognises ZIP archives that contain a `.lef` or `.xml` payload and automatically extracts the first matching file. This makes it easy to work with the compressed exports that many federation systems produce:
