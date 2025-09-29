@@ -77,7 +77,9 @@ module Lenex
         private_class_method :age_group_from
 
         def self.extract_records(collection_element)
-          return [] unless collection_element
+          unless collection_element
+            raise ::Lenex::Parser::ParseError, 'RECORDLIST RECORDS element is required'
+          end
 
           collection_element.xpath('RECORD').map do |record_element|
             Record.from_xml(record_element)
