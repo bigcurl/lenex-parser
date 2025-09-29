@@ -308,6 +308,10 @@ puts lenex.constructor.name
 
 The parser lazily loads the optional `rubyzip` dependency the first time a ZIP archive is encountered. Install it ahead of time with `gem install rubyzip` (or add it to your Gemfile) to keep parsing seamless in production environments.
 
+### Example scripts
+
+Run `bundle exec ruby examples/builder_and_parser.rb` to see a standalone script that constructs a `Lenex::Document` and parses a minimal Lenex XML payload. The script lives in the `examples` directory alongside a README that describes how to run it from a checked-out repository.
+
 ### Object model overview
 
 The parser returns a `Lenex::Parser::Objects::Lenex` instance that exposes the top-level metadata of the Lenex file:
