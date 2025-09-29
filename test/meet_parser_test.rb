@@ -325,4 +325,44 @@ class MeetParserValidationTest < MeetParserTestBase
 
     assert_match(/BANK iban attribute is required/, error.message)
   end
+
+  def test_missing_facility_city_raises
+    xml = wrap_meet_fragment('<FACILITY nation="GER" />')
+
+    error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
+
+    assert_match(/FACILITY city attribute is required/, error.message)
+  end
+
+  def test_missing_facility_nation_raises
+    xml = wrap_meet_fragment('<FACILITY city="Berlin" />')
+
+    error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
+
+    assert_match(/FACILITY nation attribute is required/, error.message)
+  end
+
+  def test_missing_point_table_name_raises
+    xml = wrap_meet_fragment('<POINTTABLE version="2024" />')
+
+    error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
+
+    assert_match(/POINTTABLE name attribute is required/, error.message)
+  end
+
+  def test_missing_point_table_version_raises
+    xml = wrap_meet_fragment('<POINTTABLE name="FINA Points" />')
+
+    error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
+
+    assert_match(/POINTTABLE version attribute is required/, error.message)
+  end
+
+  def test_missing_qualify_from_raises
+    xml = wrap_meet_fragment('<QUALIFY conversion="FINA_POINTS" />')
+
+    error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
+
+    assert_match(/QUALIFY from attribute is required/, error.message)
+  end
 end
