@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.authors       = ['TODO: Add author']
   spec.email         = ['TODO: Add email']
 
-  spec.summary       = 'Fast and lightweight SAX parser for Lenex 3 swim files.'
-  spec.description   = 'Provides streaming parsing tools for Lenex v3 swim data exchange.'
+  spec.summary       = 'Streaming Nokogiri SAX parser for Lenex 3 swim files.'
+  spec.description   = 'Streams Lenex v3 swim data via Nokogiri SAX events without building a DOM.'
   spec.homepage      = 'https://example.com/lenex-parser'
   spec.license       = 'MIT'
 

@@ -5,7 +5,11 @@ require 'stringio'
 
 require_relative 'parser/version'
 require_relative 'parser/objects'
+<<<<<<< ours
 require_relative 'parser/zip_source'
+=======
+require_relative 'parser/sax/document_handler'
+>>>>>>> theirs
 
 # Namespace for Lenex parsing functionality and data structures.
 module Lenex
@@ -27,30 +31,18 @@ module Lenex
     # @return [Lenex::Parser::Objects::Lenex]
     # @raise [Lenex::Parser::ParseError] when the payload is invalid
     def parse(source)
-      element = root_element_for(source)
-      raise ParseError, 'Root element must be LENEX' unless element&.name == 'LENEX'
+      io = ensure_io(source)
+      document = ::Lenex::Document.new
+      handler = Sax::DocumentHandler.new(document)
+      parser = Nokogiri::XML::SAX::Parser.new(handler)
 
-      Objects::Lenex.from_xml(element)
+      parser.parse(io)
+      document.build_lenex
     rescue ParseError
       raise
     rescue Nokogiri::XML::SyntaxError => e
       raise ParseError, e.message
     end
-
-    # Builds a Nokogiri document from the supplied source and returns the root
-    # element. The method is intentionally strict so that invalid documents are
-    # rejected early.
-    #
-    # @param source [#read, String]
-    # @return [Nokogiri::XML::Element]
-    # @raise [ParseError] if the XML is invalid
-    def root_element_for(source)
-      document = Nokogiri::XML::Document.parse(ensure_io(source)) do |config|
-        config.strict.noblanks
-      end
-      document.root
-    end
-    private_class_method :root_element_for
 
     # Normalizes the provided source so Nokogiri can consume it as an IO.
     #

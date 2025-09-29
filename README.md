@@ -1,6 +1,6 @@
 # Lenex Parser
 
-Lenex Parser is a fast and lightweight SAX parser designed for the Lenex 3 file format used in swimming data exchange.
+Lenex Parser is a streaming Lenex 3 parser built on Nokogiri's SAX interface. It incrementally assembles the object graph without materialising the full DOM, keeping memory usage low even for multi-megabyte swim meet exports.
 
 ## Installation
 
@@ -37,7 +37,7 @@ puts "Built by: #{lenex.constructor.name} (#{lenex.constructor.version})"
 puts "Contact email: #{lenex.constructor.contact.email}"
 ```
 
-`Lenex::Parser.parse` accepts any IO-like object (such as a `File` opened in binary mode) or a raw XML string.
+`Lenex::Parser.parse` accepts any IO-like object (such as a `File` opened in binary mode) or a raw XML string. When given an IO it reads chunk-by-chunk, emitting SAX events into the builder so the full XML tree is never loaded at once.
 
 ### Building documents incrementally
 

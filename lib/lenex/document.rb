@@ -55,7 +55,7 @@ module Lenex
       end
     end
 
-    # @!attribute [r] constructor
+    # @!attribute [r] constructor_metadata
     #   @return [ConstructorMetadata] constructor metadata captured from the LENEX root
     # @!attribute [r] meets
     #   @return [Array<Object>] collection of parsed meets associated with the document
@@ -63,20 +63,29 @@ module Lenex
     #   @return [Array<Object>] record lists extracted from the document
     # @!attribute [r] time_standard_lists
     #   @return [Array<Object>] time standard lists associated with the document
-    attr_reader :constructor, :meets, :record_lists, :time_standard_lists
+    attr_reader :constructor_metadata, :meets, :record_lists, :time_standard_lists
+    attr_accessor :version, :revision
+    attr_writer :constructor
 
     # @param constructor [ConstructorMetadata]
-    # @param meets [Array<Object>]
-    # @param record_lists [Array<Object>]
-    # @param time_standard_lists [Array<Object>]
+    # @param collections [Hash{Symbol => Array<Object>}] pre-populated associations keyed by
+    #   :meets, :record_lists, and :time_standard_lists
     def initialize(constructor: ConstructorMetadata.new,
-                   meets: [],
-                   record_lists: [],
-                   time_standard_lists: [])
-      @constructor = constructor
-      @meets = Array(meets)
-      @record_lists = Array(record_lists)
-      @time_standard_lists = Array(time_standard_lists)
+                   collections: {},
+                   version: nil,
+                   revision: nil)
+      @constructor_metadata = constructor
+      @constructor = nil
+      @meets = Array(collections.fetch(:meets, []))
+      @record_lists = Array(collections.fetch(:record_lists, []))
+      @time_standard_lists = Array(collections.fetch(:time_standard_lists, []))
+      @version = version
+      @revision = revision
+    end
+
+    # @return [ConstructorMetadata, Lenex::Parser::Objects::Constructor]
+    def constructor
+      @constructor || @constructor_metadata
     end
 
     # Adds a meet to the document.
@@ -104,6 +113,42 @@ module Lenex
     def add_time_standard_list(time_standard_list)
       @time_standard_lists << time_standard_list
       time_standard_list
+    end
+
+    # Builds a Lenex object from the accumulated SAX state.
+    #
+    # @return [Lenex::Parser::Objects::Lenex]
+    def build_lenex
+      ensure_constructor_present!
+
+      Lenex::Parser::Objects::Lenex.new(
+        version: resolved_version,
+        revision: @revision,
+        constructor: @constructor,
+        collections: collections_payload
+      )
+    end
+
+    private
+
+    def ensure_constructor_present!
+      return if @constructor
+
+      raise Lenex::Parser::ParseError, 'CONSTRUCTOR element is required'
+    end
+
+    def resolved_version
+      return @version unless @version.nil? || @version.strip.empty?
+
+      raise Lenex::Parser::ParseError, 'LENEX version attribute is required'
+    end
+
+    def collections_payload
+      {
+        meets: @meets,
+        record_lists: @record_lists,
+        time_standard_lists: @time_standard_lists
+      }
     end
   end
 end
