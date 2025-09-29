@@ -5,11 +5,8 @@ require 'stringio'
 
 require_relative 'parser/version'
 require_relative 'parser/objects'
-<<<<<<< ours
 require_relative 'parser/zip_source'
-=======
 require_relative 'parser/sax/document_handler'
->>>>>>> theirs
 
 # Namespace for Lenex parsing functionality and data structures.
 module Lenex
