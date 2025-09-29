@@ -39,6 +39,33 @@ puts "Contact email: #{lenex.constructor.contact.email}"
 
 `Lenex::Parser.parse` accepts any IO-like object (such as a `File` opened in binary mode) or a raw XML string.
 
+### Building documents incrementally
+
+The gem also exposes a lightweight `Lenex::Document` model for callers that need to build Lenex payloads programmatically before exporting them. The class mirrors the `<LENEX>` root element and provides helpers for accumulating constructor metadata as well as meet, record list, and time-standard list entries.
+
+```ruby
+require 'lenex/document'
+require 'lenex/parser/objects'
+
+document = Lenex::Document.new
+
+document.constructor[:name] = 'LENEX Builder'
+document.constructor[:version] = '1.2.3'
+
+meet = Lenex::Parser::Objects::Meet.new(
+  name: 'City Championships',
+  city: 'Berlin',
+  nation: 'GER'
+)
+
+document.add_meet(meet)
+
+document.record_lists # => []
+document.time_standard_lists # => []
+```
+
+`Lenex::Document::ConstructorMetadata` normalizes all keys to symbols so you can pass either strings or symbols when writing attributes (e.g., `constructor['contact'] = contact_details`). Each helper method returns the object you passed in, making it easy to chain builder flows.
+
 ### Object model overview
 
 The parser returns a `Lenex::Parser::Objects::Lenex` instance that exposes the top-level metadata of the Lenex file:
