@@ -52,18 +52,21 @@ module Lenex
 
           klass.from_xml(element)
         end
+        private_class_method :association_from
 
         def contact_from(element)
           return unless element
 
           Contact.from_xml(element)
         end
+        private_class_method :contact_from
 
         def extract_clubs(collection_element)
           return [] unless collection_element
 
           collection_element.xpath('CLUB').map { |club_element| Club.from_xml(club_element) }
         end
+        private_class_method :extract_clubs
 
         def extract_sessions(collection_element)
           return [] unless collection_element
@@ -72,6 +75,7 @@ module Lenex
             .xpath('SESSION')
             .map { |session_element| Session.from_xml(session_element) }
         end
+        private_class_method :extract_sessions
       end
 
       # Value object representing a MEET element.
