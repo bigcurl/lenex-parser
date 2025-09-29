@@ -57,6 +57,18 @@ class StreamingParserTest < Minitest::Test
   end
 
   class LargeLenexStream
+    DEFAULT_SESSIONS_FRAGMENT = <<~XML.chomp.freeze
+      <SESSIONS>
+        <SESSION number="1" date="2024-04-15">
+          <EVENTS>
+            <EVENT eventid="E1" number="1">
+              <SWIMSTYLE distance="50" relaycount="1" stroke="FREE" />
+            </EVENT>
+          </EVENTS>
+        </SESSION>
+      </SESSIONS>
+    XML
+
     def initialize(meet_count)
       @segments = build_segments(meet_count)
       @buffer = +''
@@ -96,7 +108,11 @@ class StreamingParserTest < Minitest::Test
     def emit_meets(yielder, meet_count)
       yielder << '<MEETS>'
       meet_count.times do |index|
-        yielder << %(<MEET name="Meet #{index}" city="Example City" nation="USA"></MEET>)
+        yielder << <<~XML.chomp
+          <MEET name="Meet #{index}" city="Example City" nation="USA">
+            #{DEFAULT_SESSIONS_FRAGMENT}
+          </MEET>
+        XML
       end
       yielder << '</MEETS>'
     end

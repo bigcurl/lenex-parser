@@ -3,6 +3,18 @@
 require 'test_helper'
 
 class OfficialParserTest < Minitest::Test
+  DEFAULT_SESSIONS = <<~XML
+    <SESSIONS>
+      <SESSION number="1" date="2024-04-15">
+        <EVENTS>
+          <EVENT eventid="E1" number="1">
+            <SWIMSTYLE distance="50" relaycount="1" stroke="FREE" />
+          </EVENT>
+        </EVENTS>
+      </SESSION>
+    </SESSIONS>
+  XML
+
   OFFICIAL_ATTRIBUTE_KEYS = %i[
     official_id
     first_name
@@ -30,13 +42,14 @@ class OfficialParserTest < Minitest::Test
     contact_email: 'official@example.com'
   }.freeze
 
-  XML_WITH_OFFICIAL = <<~XML
+  XML_WITH_OFFICIAL = <<~XML.freeze
     <LENEX version="3.0">
       <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
         <CONTACT email="support@example.com" />
       </CONSTRUCTOR>
       <MEETS>
         <MEET name="Spring Invitational" city="Berlin" nation="GER">
+          #{DEFAULT_SESSIONS}
           <CLUBS>
             <CLUB name="Berlin Swim" nation="GER">
               <OFFICIALS>
@@ -51,13 +64,14 @@ class OfficialParserTest < Minitest::Test
     </LENEX>
   XML
 
-  XML_WITHOUT_FIRSTNAME = <<~XML
+  XML_WITHOUT_FIRSTNAME = <<~XML.freeze
     <LENEX version="3.0">
       <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
         <CONTACT email="support@example.com" />
       </CONSTRUCTOR>
       <MEETS>
         <MEET name="Spring Invitational" city="Berlin" nation="GER">
+          #{DEFAULT_SESSIONS}
           <CLUBS>
             <CLUB name="Berlin Swim" nation="GER">
               <OFFICIALS>

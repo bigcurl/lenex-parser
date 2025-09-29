@@ -69,11 +69,16 @@ module Lenex
         private_class_method :extract_clubs
 
         def extract_sessions(collection_element)
-          return [] unless collection_element
+          unless collection_element
+            raise ::Lenex::Parser::ParseError, 'MEET SESSIONS element is required'
+          end
 
-          collection_element
-            .xpath('SESSION')
-            .map { |session_element| Session.from_xml(session_element) }
+          session_elements = collection_element.xpath('SESSION')
+          if session_elements.empty?
+            raise ::Lenex::Parser::ParseError, 'MEET SESSIONS element is required'
+          end
+
+          session_elements.map { |session_element| Session.from_xml(session_element) }
         end
         private_class_method :extract_sessions
       end

@@ -3,13 +3,26 @@
 require 'test_helper'
 
 module RelayParserFixtures
-  XML_WITH_RELAY = <<~XML
+  DEFAULT_SESSIONS = <<~XML
+    <SESSIONS>
+      <SESSION number="1" date="2024-04-15">
+        <EVENTS>
+          <EVENT eventid="E1" number="1">
+            <SWIMSTYLE distance="50" relaycount="1" stroke="FREE" />
+          </EVENT>
+        </EVENTS>
+      </SESSION>
+    </SESSIONS>
+  XML
+
+  XML_WITH_RELAY = <<~XML.freeze
     <LENEX version="3.0">
       <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
         <CONTACT email="support@example.com" />
       </CONSTRUCTOR>
       <MEETS>
         <MEET name="Spring Invitational" city="Berlin" nation="GER">
+          #{DEFAULT_SESSIONS}
           <CLUBS>
             <CLUB name="Berlin Swim" nation="GER">
               <RELAYS>
@@ -50,13 +63,14 @@ module RelayParserFixtures
 end
 
 module RelayParserErrorFixtures
-  XML_WITHOUT_AGEMAX = <<~XML
+  XML_WITHOUT_AGEMAX = <<~XML.freeze
     <LENEX version="3.0">
       <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
         <CONTACT email="support@example.com" />
       </CONSTRUCTOR>
       <MEETS>
         <MEET name="Spring Invitational" city="Berlin" nation="GER">
+          #{RelayParserFixtures::DEFAULT_SESSIONS}
           <CLUBS>
             <CLUB name="Berlin Swim" nation="GER">
               <RELAYS>
@@ -73,13 +87,14 @@ module RelayParserErrorFixtures
     </LENEX>
   XML
 
-  XML_WITHOUT_ENTRY_EVENT = <<~XML
+  XML_WITHOUT_ENTRY_EVENT = <<~XML.freeze
     <LENEX version="3.0">
       <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
         <CONTACT email="support@example.com" />
       </CONSTRUCTOR>
       <MEETS>
         <MEET name="Spring Invitational" city="Berlin" nation="GER">
+          #{RelayParserFixtures::DEFAULT_SESSIONS}
           <CLUBS>
             <CLUB name="Berlin Swim" nation="GER">
               <RELAYS>
@@ -96,13 +111,14 @@ module RelayParserErrorFixtures
     </LENEX>
   XML
 
-  XML_WITHOUT_POSITION_NUMBER = <<~XML
+  XML_WITHOUT_POSITION_NUMBER = <<~XML.freeze
     <LENEX version="3.0">
       <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
         <CONTACT email="support@example.com" />
       </CONSTRUCTOR>
       <MEETS>
         <MEET name="Spring Invitational" city="Berlin" nation="GER">
+          #{RelayParserFixtures::DEFAULT_SESSIONS}
           <CLUBS>
             <CLUB name="Berlin Swim" nation="GER">
               <RELAYS>

@@ -122,6 +122,18 @@ end
 module AthleteParserXmlHelper
   module_function
 
+  DEFAULT_SESSIONS = <<~XML
+    <SESSIONS>
+      <SESSION number="1" date="2024-04-15">
+        <EVENTS>
+          <EVENT eventid="E1" number="1">
+            <SWIMSTYLE distance="50" relaycount="1" stroke="FREE" />
+          </EVENT>
+        </EVENTS>
+      </SESSION>
+    </SESSIONS>
+  XML
+
   def build_athlete_xml(athlete_attributes:, components:)
     <<~XML
       <LENEX version="3.0">
@@ -130,6 +142,7 @@ module AthleteParserXmlHelper
         </CONSTRUCTOR>
         <MEETS>
           <MEET name="Spring Invitational" city="Berlin" nation="GER">
+            #{DEFAULT_SESSIONS}
             <CLUBS>
               <CLUB name="Berlin Swim" nation="GER">
                 #{AthleteParserXmlComponents.athletes_element(athlete_attributes:, components:)}

@@ -3,13 +3,26 @@
 require 'test_helper'
 
 module ClubParserFixtures
-  XML_WITH_CLUB = <<~XML
+  DEFAULT_SESSIONS = <<~XML
+    <SESSIONS>
+      <SESSION number="1" date="2024-04-15">
+        <EVENTS>
+          <EVENT eventid="E1" number="1">
+            <SWIMSTYLE distance="50" relaycount="1" stroke="FREE" />
+          </EVENT>
+        </EVENTS>
+      </SESSION>
+    </SESSIONS>
+  XML
+
+  XML_WITH_CLUB = <<~XML.freeze
     <LENEX version="3.0" revision="3.0.1">
       <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
         <CONTACT email="support@example.com" name="Support Team" />
       </CONSTRUCTOR>
       <MEETS>
         <MEET name="Spring Invitational" city="Berlin" nation="GER" course="LCM">
+          #{DEFAULT_SESSIONS}
           <CLUBS>
             <CLUB name="Sharks Swim Club" name.en="Sharks International" shortname="Sharks" shortname.en="Sharks Intl" code="SHK" nation="GER" number="1" region="BER" swrid="12345" type="CLUB">
               <CONTACT email="club@example.com" />
@@ -20,13 +33,14 @@ module ClubParserFixtures
     </LENEX>
   XML
 
-  XML_WITHOUT_CLUB_NAME = <<~XML
+  XML_WITHOUT_CLUB_NAME = <<~XML.freeze
     <LENEX version="3.0">
       <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
         <CONTACT email="support@example.com" />
       </CONSTRUCTOR>
       <MEETS>
         <MEET name="Spring Invitational" city="Berlin" nation="GER">
+          #{DEFAULT_SESSIONS}
           <CLUBS>
             <CLUB code="SHK" />
           </CLUBS>
@@ -35,13 +49,14 @@ module ClubParserFixtures
     </LENEX>
   XML
 
-  XML_WITH_UNATTACHED_CLUB = <<~XML
+  XML_WITH_UNATTACHED_CLUB = <<~XML.freeze
     <LENEX version="3.0">
       <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
         <CONTACT email="support@example.com" />
       </CONSTRUCTOR>
       <MEETS>
         <MEET name="Spring Invitational" city="Berlin" nation="GER">
+          #{DEFAULT_SESSIONS}
           <CLUBS>
             <CLUB type="UNATTACHED" code="UNA" />
           </CLUBS>
@@ -50,13 +65,14 @@ module ClubParserFixtures
     </LENEX>
   XML
 
-  XML_WITH_CLUB_CONTACT_WITHOUT_EMAIL = <<~XML
+  XML_WITH_CLUB_CONTACT_WITHOUT_EMAIL = <<~XML.freeze
     <LENEX version="3.0">
       <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
         <CONTACT email="support@example.com" />
       </CONSTRUCTOR>
       <MEETS>
         <MEET name="Spring Invitational" city="Berlin" nation="GER">
+          #{DEFAULT_SESSIONS}
           <CLUBS>
             <CLUB name="Sharks Swim Club">
               <CONTACT name="Club Contact" />

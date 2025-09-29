@@ -57,6 +57,34 @@ module MeetAdditionalAttributesHelper
 end
 
 module MeetXmlFixtures
+  MEET_WRAPPER = <<~XML
+    <LENEX version="3.0">
+      <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
+        <CONTACT email="support@example.com" />
+      </CONSTRUCTOR>
+      <MEETS>
+        <MEET name="Spring Invitational" city="Berlin" nation="GER">
+          %<fragment>s
+          %<sessions>s
+        </MEET>
+      </MEETS>
+    </LENEX>
+  XML
+
+  def default_sessions_fragment
+    <<~XML
+      <SESSIONS>
+        <SESSION number="1" date="2024-04-15">
+          <EVENTS>
+            <EVENT eventid="E1" number="1">
+              <SWIMSTYLE distance="50" relaycount="1" stroke="FREE" />
+            </EVENT>
+          </EVENTS>
+        </SESSION>
+      </SESSIONS>
+    XML
+  end
+
   def meet_xml
     <<~XML
       <LENEX version="3.0" revision="3.0.1">
@@ -66,6 +94,7 @@ module MeetXmlFixtures
         <MEETS>
           <MEET name="Spring Invitational" city="Berlin" nation="GER" course="LCM">
             <CONTACT email="meet@example.com" />
+            #{default_sessions_fragment}
           </MEET>
         </MEETS>
       </LENEX>
@@ -81,6 +110,7 @@ module MeetXmlFixtures
         <MEETS>
           <MEET city="Berlin" nation="GER">
             <CONTACT email="meet@example.com" />
+            #{default_sessions_fragment}
           </MEET>
         </MEETS>
       </LENEX>
@@ -96,6 +126,7 @@ module MeetXmlFixtures
         <MEETS>
           <MEET name="Spring Invitational" nation="GER">
             <CONTACT email="meet@example.com" />
+            #{default_sessions_fragment}
           </MEET>
         </MEETS>
       </LENEX>
@@ -111,6 +142,7 @@ module MeetXmlFixtures
         <MEETS>
           <MEET name="Spring Invitational" city="Berlin">
             <CONTACT email="meet@example.com" />
+            #{default_sessions_fragment}
           </MEET>
         </MEETS>
       </LENEX>
@@ -148,25 +180,16 @@ module MeetMetadataFixtures
               <FEE currency="EUR" type="RELAY" value="2500" />
             </FEES>
             <CONTACT email="meet@example.com" />
+            #{default_sessions_fragment}
           </MEET>
         </MEETS>
       </LENEX>
     XML
   end
 
-  def wrap_meet_fragment(fragment)
-    <<~XML
-      <LENEX version="3.0">
-        <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
-          <CONTACT email="support@example.com" />
-        </CONSTRUCTOR>
-        <MEETS>
-          <MEET name="Spring Invitational" city="Berlin" nation="GER">
-            #{fragment}
-          </MEET>
-        </MEETS>
-      </LENEX>
-    XML
+  def wrap_meet_fragment(fragment, include_sessions: true)
+    sessions = include_sessions ? default_sessions_fragment : ''
+    format(MeetXmlFixtures::MEET_WRAPPER, fragment:, sessions:)
   end
 end
 
@@ -374,5 +397,25 @@ class MeetParserValidationTest < MeetParserTestBase
     error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
 
     assert_match(/QUALIFY from attribute is required/, error.message)
+  end
+
+  def test_missing_sessions_element_raises
+    xml = wrap_meet_fragment('<CONTACT email="meet@example.com" />', include_sessions: false)
+
+    error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
+
+    assert_match(/MEET SESSIONS element is required/, error.message)
+  end
+
+  def test_blank_sessions_element_raises
+    fragment = <<~XML
+      <CONTACT email="meet@example.com" />
+      <SESSIONS></SESSIONS>
+    XML
+    xml = wrap_meet_fragment(fragment, include_sessions: false)
+
+    error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
+
+    assert_match(/MEET SESSIONS element is required/, error.message)
   end
 end
