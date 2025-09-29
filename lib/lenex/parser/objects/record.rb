@@ -62,7 +62,7 @@ module Lenex
         private_class_method :meet_info_from
 
         def self.swim_style_from(element)
-          return unless element
+          raise ::Lenex::Parser::ParseError, 'RECORD SWIMSTYLE element is required' unless element
 
           SwimStyle.from_xml(element)
         end
