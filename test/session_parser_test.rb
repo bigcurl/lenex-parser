@@ -5,85 +5,103 @@ require 'test_helper'
 module SessionParserTestHelper
   module_function
 
+  SESSION_TEMPLATE_PREFIX = <<~XML
+    <LENEX version="3.0">
+      <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
+        <CONTACT email="support@example.com" />
+      </CONSTRUCTOR>
+      <MEETS>
+        <MEET name="Spring Invitational" city="Berlin" nation="GER">
+          <SESSIONS>
+            <SESSION %<attributes>s>
+  XML
+
+  SESSION_TEMPLATE_SUFFIX = <<~XML
+            </SESSION>
+          </SESSIONS>
+        </MEET>
+      </MEETS>
+    </LENEX>
+  XML
+
   def xml_with_session
-    <<~XML
-      <LENEX version="3.0">
-        <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
-          <CONTACT email="support@example.com" />
-        </CONSTRUCTOR>
-        <MEETS>
-          <MEET name="Spring Invitational" city="Berlin" nation="GER">
-            <SESSIONS>
-              <SESSION number="1" date="2024-05-01" course="LCM" daytime="08:00" endtime="12:15">
-                <POOL lanemin="1" lanemax="8" type="INDOOR" temperature="27" />
-                <FEES>
-                  <FEE currency="EUR" type="ATHLETE" value="1500" />
-                </FEES>
-                <JUDGES>
-                  <JUDGE officialid="OFF1" role="REF" />
-                </JUDGES>
-              </SESSION>
-            </SESSIONS>
-          </MEET>
-        </MEETS>
-      </LENEX>
-    XML
+    wrap_session(
+      attributes: 'number="1" date="2024-05-01" course="LCM" daytime="08:00" endtime="12:15"',
+      body: session_with_full_details_body
+    )
   end
 
   def xml_without_session_date
-    <<~XML
-      <LENEX version="3.0">
-        <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
-          <CONTACT email="support@example.com" />
-        </CONSTRUCTOR>
-        <MEETS>
-          <MEET name="Spring Invitational" city="Berlin" nation="GER">
-            <SESSIONS>
-              <SESSION number="1" course="LCM" />
-            </SESSIONS>
-          </MEET>
-        </MEETS>
-      </LENEX>
-    XML
+    wrap_session(
+      attributes: 'number="1" course="LCM"',
+      body: default_events_block
+    )
   end
 
   def xml_without_session_number
-    <<~XML
-      <LENEX version="3.0">
-        <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
-          <CONTACT email="support@example.com" />
-        </CONSTRUCTOR>
-        <MEETS>
-          <MEET name="Spring Invitational" city="Berlin" nation="GER">
-            <SESSIONS>
-              <SESSION date="2024-05-01" course="LCM" />
-            </SESSIONS>
-          </MEET>
-        </MEETS>
-      </LENEX>
-    XML
+    wrap_session(
+      attributes: 'date="2024-05-01" course="LCM"',
+      body: default_events_block
+    )
   end
 
   def xml_with_judge_missing_official_id
-    <<~XML
-      <LENEX version="3.0">
-        <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
-          <CONTACT email="support@example.com" />
-        </CONSTRUCTOR>
-        <MEETS>
-          <MEET name="Spring Invitational" city="Berlin" nation="GER">
-            <SESSIONS>
-              <SESSION number="1" date="2024-05-01">
-                <POOL lanemin="1" lanemax="8" />
-                <JUDGES>
-                  <JUDGE role="REF" />
-                </JUDGES>
-              </SESSION>
-            </SESSIONS>
-          </MEET>
-        </MEETS>
-      </LENEX>
-    XML
+    wrap_session(
+      attributes: 'number="1" date="2024-05-01"',
+      body: <<~BODY
+        <POOL lanemin="1" lanemax="8" />
+        <JUDGES>
+          <JUDGE role="REF" />
+        </JUDGES>
+        #{default_events_block}
+      BODY
+    )
+  end
+
+  def xml_without_events
+    wrap_session(attributes: 'number="1" date="2024-05-01"')
+  end
+
+  def xml_with_empty_events
+    wrap_session(
+      attributes: 'number="1" date="2024-05-01"',
+      body: '<EVENTS></EVENTS>'
+    )
+  end
+
+  def session_with_full_details_body
+    <<~BODY.chomp
+      <POOL lanemin="1" lanemax="8" type="INDOOR" temperature="27" />
+      <FEES>
+        <FEE currency="EUR" type="ATHLETE" value="1500" />
+      </FEES>
+      <JUDGES>
+        <JUDGE officialid="OFF1" role="REF" />
+      </JUDGES>
+      #{default_events_block}
+    BODY
+  end
+
+  def default_events_block
+    <<~BODY.chomp
+      <EVENTS>
+        <EVENT eventid="E1" number="1">
+          <SWIMSTYLE distance="100" relaycount="1" stroke="FREE" />
+        </EVENT>
+      </EVENTS>
+    BODY
+  end
+
+  def wrap_session(attributes:, body: '')
+    prefix = format(SESSION_TEMPLATE_PREFIX, attributes:)
+    prefix + indent_session_children(body) + SESSION_TEMPLATE_SUFFIX
+  end
+
+  def indent_session_children(children)
+    text = children.to_s.strip
+    return '' if text.empty?
+
+    text.lines.map { |line| "                #{line.rstrip}\n" }.join
   end
 end
 
@@ -93,6 +111,7 @@ module SessionParserExpectedAttributes
       .merge(expected_pool_attributes)
       .merge(expected_fee_schedule_attributes)
       .merge(expected_judge_attributes)
+      .merge(expected_event_attributes)
   end
 
   def base_session_attributes
@@ -125,6 +144,19 @@ module SessionParserExpectedAttributes
     }
   end
 
+  def expected_event_attributes
+    {
+      events_count: 1,
+      event_class: Lenex::Parser::Objects::Event,
+      event_number: '1',
+      event_event_id: 'E1',
+      event_swim_style_class: Lenex::Parser::Objects::SwimStyle,
+      event_swim_style_distance: '100',
+      event_swim_style_relay_count: '1',
+      event_swim_style_stroke: 'FREE'
+    }
+  end
+
   def expected_fee_schedule_attributes
     {
       fee_schedule_class: Lenex::Parser::Objects::FeeSchedule,
@@ -141,6 +173,7 @@ module SessionParserActualAttributes
       .merge(actual_pool_attributes(session.pool))
       .merge(actual_fee_schedule_attributes(session.fee_schedule))
       .merge(actual_judge_attributes(session.judges))
+      .merge(actual_event_attributes(session.events))
   end
 
   def base_actual_attributes(session)
@@ -174,6 +207,26 @@ module SessionParserActualAttributes
       judge_class: judge&.class,
       judge_official_id: judge&.official_id,
       judge_role: judge&.role
+    }
+  end
+
+  def actual_event_attributes(events)
+    event = events.first
+
+    {
+      events_count: events.length,
+      event_class: event&.class,
+      event_number: event&.number,
+      event_event_id: event&.event_id
+    }.merge(swim_style_attributes(event&.swim_style))
+  end
+
+  def swim_style_attributes(swim_style)
+    {
+      event_swim_style_class: swim_style&.class,
+      event_swim_style_distance: swim_style&.distance,
+      event_swim_style_relay_count: swim_style&.relay_count,
+      event_swim_style_stroke: swim_style&.stroke
     }
   end
 
@@ -253,6 +306,22 @@ class SessionParserSuccessTest < SessionParserTestBase
 end
 
 class SessionParserValidationTest < SessionParserTestBase
+  def test_missing_events_element_raises
+    error = assert_raises(::Lenex::Parser::ParseError) do
+      Lenex::Parser.parse(xml_without_events)
+    end
+
+    assert_match(/SESSION EVENTS element is required/, error.message)
+  end
+
+  def test_empty_events_collection_raises
+    error = assert_raises(::Lenex::Parser::ParseError) do
+      Lenex::Parser.parse(xml_with_empty_events)
+    end
+
+    assert_match(/SESSION must include at least one EVENT element/, error.message)
+  end
+
   def test_missing_session_date_raises
     error = assert_raises(::Lenex::Parser::ParseError) do
       Lenex::Parser.parse(xml_without_session_date)

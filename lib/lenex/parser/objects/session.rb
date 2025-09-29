@@ -88,11 +88,17 @@ module Lenex
         private_class_method :extract_judges
 
         def self.extract_events(collection_element)
-          return [] unless collection_element
+          unless collection_element
+            raise ::Lenex::Parser::ParseError, 'SESSION EVENTS element is required'
+          end
 
-          collection_element.xpath('EVENT').map do |event_element|
+          events = collection_element.xpath('EVENT').map do |event_element|
             Event.from_xml(event_element)
           end
+
+          return events unless events.empty?
+
+          raise ::Lenex::Parser::ParseError, 'SESSION must include at least one EVENT element'
         end
         private_class_method :extract_events
       end
