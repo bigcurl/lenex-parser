@@ -39,3 +39,5 @@ ensure
   Rake::Task[:rubocop].reenable
   Rake::Task[:docs].reenable
 end
+
+task default: :ci

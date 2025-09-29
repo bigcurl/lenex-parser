@@ -34,7 +34,13 @@ class LenexParserErrorHandlingTest < Minitest::Test
   def test_parse_wraps_nokogiri_syntax_errors
     syntax_error = Nokogiri::XML::SyntaxError.new(MALFORMED_MESSAGE)
 
-    Nokogiri::XML::Document.stub(:parse, ->(*) { raise syntax_error }) do
+    sax_parser = Class.new do
+      define_method(:parse) do |*_args|
+        raise syntax_error
+      end
+    end.new
+
+    Nokogiri::XML::SAX::Parser.stub(:new, sax_parser) do
       error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse('<LENEX/>') }
       assert_equal MALFORMED_MESSAGE, error.message
     end
