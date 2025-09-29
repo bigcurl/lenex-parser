@@ -15,6 +15,8 @@ module Lenex
           'lastname.en' => { key: :last_name_en, required: false },
           'level' => { key: :level, required: false },
           'license' => { key: :license, required: false },
+          'license_dbs' => { key: :license_dbs, required: false },
+          'license_dsv' => { key: :license_dsv, required: false },
           'license_ipc' => { key: :license_ipc, required: false },
           'nameprefix' => { key: :name_prefix, required: false },
           'nation' => { key: :nation, required: false },

@@ -197,6 +197,8 @@ module AthleteParserDefaults
     'gender' => 'F',
     'level' => 'B',
     'license' => 'GER-12345',
+    'license_dbs' => 'GER-DBS-2024',
+    'license_dsv' => 'GER-DSV-2024',
     'license_ipc' => 'IPC-678',
     'nameprefix' => 'von',
     'nation' => 'GER',
@@ -227,6 +229,8 @@ module AthleteParserAttributeReaders
     last_name_en
     level
     license
+    license_dbs
+    license_dsv
     license_ipc
     name_prefix
     nation
@@ -388,6 +392,8 @@ module AthleteParserExpectationConstants
     last_name_en: 'Schmidt',
     level: 'B',
     license: 'GER-12345',
+    license_dbs: 'GER-DBS-2024',
+    license_dsv: 'GER-DSV-2024',
     license_ipc: 'IPC-678',
     name_prefix: 'von',
     nation: 'GER',

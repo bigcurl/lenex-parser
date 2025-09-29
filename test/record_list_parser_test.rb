@@ -16,7 +16,7 @@ module RecordListFixtures
             <RECORD swimtime="00:47.00" status="APPROVED" comment="World record">
               <MEETINFO city="Budapest" date="2024-07-01" />
               <SWIMSTYLE distance="100" relaycount="1" stroke="FREE" />
-              <ATHLETE birthdate="1996-08-16" firstname="Caeleb" lastname="Dressel" gender="M" nation="USA">
+              <ATHLETE birthdate="1996-08-16" firstname="Caeleb" lastname="Dressel" gender="M" nation="USA" license="USA-123" license_dbs="GER-DBS-2024" license_dsv="GER-DSV-2024" license_ipc="IPC-2024">
                 <CLUB name="Gators" nation="USA" />
               </ATHLETE>
               <SPLITS>
@@ -59,6 +59,10 @@ module RecordListFixtures
       'Dressel',
       '1996-08-16',
       'M',
+      'USA-123',
+      'GER-DBS-2024',
+      'GER-DSV-2024',
+      'IPC-2024',
       'Gators',
       'USA'
     ],
@@ -174,13 +178,9 @@ module RecordListTestHelpers
 
   def record_athlete_values(athlete)
     [
-      athlete.class,
-      athlete.first_name,
-      athlete.last_name,
-      athlete.birthdate,
-      athlete.gender,
-      athlete.club&.name,
-      athlete.club&.nation
+      athlete.class, athlete.first_name, athlete.last_name, athlete.birthdate, athlete.gender,
+      athlete.license, athlete.license_dbs, athlete.license_dsv, athlete.license_ipc,
+      athlete.club&.name, athlete.club&.nation
     ]
   end
 
