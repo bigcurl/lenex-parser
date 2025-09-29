@@ -164,6 +164,27 @@ module RecordListTestHelpers
     @parsed_record_list ||= Lenex::Parser.parse(RecordListFixtures::SAMPLE_XML).record_lists.fetch(0)
   end
 
+  def record_list_with_region_xml(region:, nation: nil)
+    attributes = ['course="LCM"', 'gender="M"', 'name="World Records"', "region=\"#{region}\""]
+    attributes << "nation=\"#{nation}\"" if nation
+    fragment = record_list_region_records_fragment
+
+    wrap_record_list(
+      "<RECORDLIST #{attributes.join(' ')}>\n" \
+      "#{fragment}</RECORDLIST>"
+    )
+  end
+
+  def record_list_region_records_fragment
+    <<~XML
+      <RECORDS>
+        <RECORD swimtime="00:47.00">
+          <SWIMSTYLE distance="100" relaycount="1" stroke="FREE" />
+        </RECORD>
+      </RECORDS>
+    XML
+  end
+
   def record_values(record)
     [record.swim_time, record.status, record.comment]
   end
@@ -279,6 +300,22 @@ class RecordListParserTest < Minitest::Test
 
     error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
     assert_equal 'RECORDLIST RECORDS element is required', error.message
+  end
+
+  def test_record_list_region_requires_nation
+    xml = record_list_with_region_xml(region: 'GLOBAL')
+    expected_message = 'RECORDLIST nation attribute is required when region attribute is present'
+
+    error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
+    assert_equal expected_message, error.message
+  end
+
+  def test_record_list_region_with_nation_succeeds
+    xml = record_list_with_region_xml(region: 'GLOBAL', nation: 'INT')
+    record_list = Lenex::Parser.parse(xml).record_lists.fetch(0)
+
+    assert_equal 'GLOBAL', record_list.region
+    assert_equal 'INT', record_list.nation
   end
 
   def test_missing_record_list_course_raises

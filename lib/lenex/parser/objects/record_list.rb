@@ -60,8 +60,22 @@ module Lenex
             message = "RECORDLIST #{ATTRIBUTE_NAME_FOR[key]} attribute is required"
             raise ::Lenex::Parser::ParseError, message
           end
+
+          ensure_region_requires_nation!(attributes)
         end
         private_class_method :ensure_required_attributes!
+
+        def self.ensure_region_requires_nation!(attributes)
+          region = attributes[:region]
+          return unless region
+
+          nation = attributes[:nation]
+          return if nation && !nation.strip.empty?
+
+          message = 'RECORDLIST nation attribute is required when region attribute is present'
+          raise ::Lenex::Parser::ParseError, message
+        end
+        private_class_method :ensure_region_requires_nation!
 
         ATTRIBUTE_NAME_FOR = ATTRIBUTES.each_with_object({}) do |(attribute_name, definition),
                                                                   mapping|
