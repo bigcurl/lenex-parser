@@ -24,8 +24,26 @@ gem install lenex-parser
 
 ## Usage
 
+### Loading the library
+
 ```ruby
+# Load the entire gem (parser, document builder, and value objects)
+require 'lenex-parser'
+
+# Load only the streaming parser API
 require 'lenex/parser'
+
+# Load just the document builder and value objects for manual construction flows
+require 'lenex/document'
+require 'lenex/parser/objects'
+```
+
+Requiring `lenex-parser` gives you access to the streaming parser, `Lenex::Document`, and all of the value objects used in the builder. The rest of the examples assume you have loaded the gem this way. If you prefer finer-grained requires, use the targeted options shown above.
+
+### Parsing Lenex XML
+
+```ruby
+require 'lenex-parser'
 
 xml = File.read('meet.lenex')
 
@@ -64,13 +82,14 @@ document.record_lists # => []
 document.time_standard_lists # => []
 ```
 
-`Lenex::Document::ConstructorMetadata` normalizes all keys to symbols so you can pass either strings or symbols when writing attributes (e.g., `constructor['contact'] = contact_details`). Each helper method returns the object you passed in, making it easy to chain builder flows.
+If you have already required `lenex-parser`, the document builder and object model are loaded and you can omit the more granular requires shown above. `Lenex::Document::ConstructorMetadata` normalizes all keys to symbols so you can pass either strings or symbols when writing attributes (e.g., `constructor['contact'] = contact_details`). Each helper method returns the object you passed in, making it easy to chain builder flows.
 ### Parsing zipped Lenex files
 
 `Lenex::Parser.parse` also recognises ZIP archives that contain a `.lef` or `.xml` payload and automatically extracts the first matching file. This makes it easy to work with the compressed exports that many federation systems produce:
 
 ```ruby
 require 'lenex/parser'
+require 'lenex/document'
 
 zip_data = File.binread('meet.lenex.zip')
 
