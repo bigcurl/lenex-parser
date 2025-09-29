@@ -31,11 +31,11 @@ module Lenex
           end
         end
 
-        def self.from_xml(element)
+        def self.from_xml(element, email_required: false)
           raise ::Lenex::Parser::ParseError, 'CONTACT element is required' unless element
 
           data = extract_attributes(element)
-          if data[:email].nil? || data[:email].strip.empty?
+          if email_required && (data[:email].nil? || data[:email].strip.empty?)
             raise ::Lenex::Parser::ParseError, 'CONTACT email attribute is required'
           end
 

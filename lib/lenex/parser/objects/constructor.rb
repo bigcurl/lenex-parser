@@ -28,7 +28,7 @@ module Lenex
           raise ::Lenex::Parser::ParseError, 'CONSTRUCTOR element is required' unless element
 
           data = attributes_from(element)
-          contact = Contact.from_xml(element.at_xpath('CONTACT'))
+          contact = Contact.from_xml(element.at_xpath('CONTACT'), email_required: true)
 
           new(**data, contact:)
         end

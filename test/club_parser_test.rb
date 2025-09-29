@@ -49,6 +49,23 @@ module ClubParserFixtures
       </MEETS>
     </LENEX>
   XML
+
+  XML_WITH_CLUB_CONTACT_WITHOUT_EMAIL = <<~XML
+    <LENEX version="3.0">
+      <CONSTRUCTOR name="Lenex Builder" registration="Example Org" version="1.2.3">
+        <CONTACT email="support@example.com" />
+      </CONSTRUCTOR>
+      <MEETS>
+        <MEET name="Spring Invitational" city="Berlin" nation="GER">
+          <CLUBS>
+            <CLUB name="Sharks Swim Club">
+              <CONTACT name="Club Contact" />
+            </CLUB>
+          </CLUBS>
+        </MEET>
+      </MEETS>
+    </LENEX>
+  XML
 end
 
 class ClubParserTest < Minitest::Test
@@ -101,6 +118,14 @@ class ClubParserTest < Minitest::Test
     assert_nil club.name
     assert_equal 'UNATTACHED', club.type
     assert_nil club.contact
+  end
+
+  def test_club_contact_without_email_is_allowed
+    club = Lenex::Parser.parse(XML_WITH_CLUB_CONTACT_WITHOUT_EMAIL).meets.first.clubs.first
+
+    assert_instance_of Lenex::Parser::Objects::Contact, club.contact
+    assert_nil club.contact.email
+    assert_equal 'Club Contact', club.contact.name
   end
 
   private

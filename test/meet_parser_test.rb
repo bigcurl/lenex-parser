@@ -195,6 +195,16 @@ class MeetParserSuccessTest < MeetParserTestBase
                  [metadata_meet.age_date.type, metadata_meet.age_date.value]
   end
 
+  def test_meet_contact_without_email_is_allowed
+    xml = wrap_meet_fragment('<CONTACT name="Meet Director" />')
+
+    meet = Lenex::Parser.parse(xml).meets.fetch(0)
+
+    assert_instance_of Lenex::Parser::Objects::Contact, meet.contact
+    assert_nil meet.contact.email
+    assert_equal 'Meet Director', meet.contact.name
+  end
+
   def test_parse_meet_bank_metadata
     bank = metadata_meet.bank
 
