@@ -92,14 +92,35 @@ end
 class RecordObjectValidationTest < Minitest::Test
   def test_record_athlete_requires_required_attributes
     element = Nokogiri::XML(
-      '<ATHLETE birthdate="2000-01-01" lastname="Doe" gender="M" />'
+      '<ATHLETE firstname="Alex" lastname="Doe" />'
     ).root
 
     error = assert_raises(::Lenex::Parser::ParseError) do
       Lenex::Parser::Objects::RecordAthlete.from_xml(element)
     end
 
-    assert_equal 'ATHLETE firstname attribute is required', error.message
+    assert_equal 'ATHLETE gender attribute is required', error.message
+  end
+
+  def test_record_athlete_allows_missing_birthdate
+    element = Nokogiri::XML(
+      '<ATHLETE firstname="Alex" lastname="Smith" gender="F" />'
+    ).root
+
+    athlete = Lenex::Parser::Objects::RecordAthlete.from_xml(element)
+
+    assert_nil athlete.birthdate
+    assert_equal %w[Alex Smith F], [athlete.first_name, athlete.last_name, athlete.gender]
+  end
+
+  def test_record_athlete_allows_missing_names
+    element = Nokogiri::XML('<ATHLETE gender="M" />').root
+
+    athlete = Lenex::Parser::Objects::RecordAthlete.from_xml(element)
+
+    assert_nil athlete.first_name
+    assert_nil athlete.last_name
+    assert_equal 'M', athlete.gender
   end
 
   def test_record_relay_position_requires_athlete
@@ -222,6 +243,22 @@ module RecordListTestHelpers
       position.athlete.last_name
     ]
   end
+
+  RECORD_LIST_WITHOUT_AGE_GROUP_ID_FRAGMENT = <<~XML
+    <RECORDLIST course="LCM" gender="M" name="World Records">
+      <AGEGROUP agemin="15" agemax="17" />
+      <RECORDS>
+        <RECORD swimtime="00:47.00">
+          <SWIMSTYLE distance="100" relaycount="1" stroke="FREE" />
+          <ATHLETE gender="M" />
+        </RECORD>
+      </RECORDS>
+    </RECORDLIST>
+  XML
+
+  def record_list_without_age_group_id_xml
+    wrap_record_list(RECORD_LIST_WITHOUT_AGE_GROUP_ID_FRAGMENT)
+  end
 end
 
 class RecordListParserTest < Minitest::Test
@@ -300,6 +337,15 @@ class RecordListParserTest < Minitest::Test
 
     error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
     assert_equal 'RECORDLIST RECORDS element is required', error.message
+  end
+
+  def test_record_list_allows_age_group_without_identifier
+    record_list = Lenex::Parser.parse(record_list_without_age_group_id_xml).record_lists.fetch(0)
+    age_group = record_list.age_group
+
+    assert_nil age_group.age_group_id
+    assert_equal '17', age_group.age_max
+    assert_equal '15', age_group.age_min
   end
 
   def test_record_list_region_requires_nation

@@ -7,6 +7,8 @@ module Lenex
       class Result
         ATTRIBUTES = {
           'comment' => { key: :comment, required: false },
+          'entrycourse' => { key: :entry_course, required: false },
+          'entrytime' => { key: :entry_time, required: false },
           'eventid' => { key: :event_id, required: false },
           'handicap' => { key: :handicap, required: false },
           'heatid' => { key: :heat_id, required: false },

@@ -9,9 +9,9 @@ module Lenex
           'breast' => { key: :breast, required: true },
           'breaststatus' => { key: :breast_status, required: false },
           'exception' => { key: :exception, required: false },
-          'free' => { key: :free, required: true },
+          'free' => { key: :free, required: false },
           'freestatus' => { key: :free_status, required: false },
-          'medley' => { key: :medley, required: true },
+          'medley' => { key: :medley, required: false },
           'medleystatus' => { key: :medley_status, required: false }
         }.freeze
 
@@ -45,8 +45,10 @@ module Lenex
         private_class_method :extract_attributes
 
         def self.ensure_required_attributes!(attributes)
-          required_keys = %i[breast free medley]
-          required_keys.each do |key|
+          ATTRIBUTES.each_value do |definition|
+            next unless definition[:required]
+
+            key = definition[:key]
             value = attributes[key]
             next unless value.nil? || value.strip.empty?
 

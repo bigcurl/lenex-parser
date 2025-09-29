@@ -7,11 +7,11 @@ module Lenex
       class RecordAthlete
         ATTRIBUTES = {
           'athleteid' => { key: :athlete_id, required: false },
-          'birthdate' => { key: :birthdate, required: true },
-          'firstname' => { key: :first_name, required: true },
+          'birthdate' => { key: :birthdate, required: false },
+          'firstname' => { key: :first_name, required: false },
           'firstname.en' => { key: :first_name_en, required: false },
           'gender' => { key: :gender, required: true },
-          'lastname' => { key: :last_name, required: true },
+          'lastname' => { key: :last_name, required: false },
           'lastname.en' => { key: :last_name_en, required: false },
           'level' => { key: :level, required: false },
           'license' => { key: :license, required: false },
@@ -61,8 +61,10 @@ module Lenex
         private_class_method :extract_attributes
 
         def self.ensure_required_attributes!(attributes)
-          required_keys = %i[birthdate first_name last_name gender]
-          required_keys.each do |key|
+          ATTRIBUTES.each_value do |definition|
+            next unless definition[:required]
+
+            key = definition[:key]
             value = attributes[key]
             next unless value.nil? || value.strip.empty?
 

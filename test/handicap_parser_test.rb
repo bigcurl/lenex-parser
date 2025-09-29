@@ -23,4 +23,14 @@ class HandicapParserTest < Minitest::Test
 
     assert_match(/HANDICAP breast attribute is required/, error.message)
   end
+
+  def test_missing_optional_attributes_are_allowed
+    element = Nokogiri::XML.parse('<HANDICAP breast="4" />').root
+
+    handicap = Lenex::Parser::Objects::Handicap.from_xml(element)
+
+    assert_equal '4', handicap.breast
+    assert_nil handicap.free
+    assert_nil handicap.medley
+  end
 end

@@ -87,6 +87,21 @@ module TimeStandardListTestHelper
     )
   end
 
+  LIST_WITH_AGE_GROUP_MISSING_IDENTIFIER = <<~XML
+    <TIMESTANDARDLIST timestandardlistid="TS1" name="Olympic A" course="LCM" gender="M">
+      <AGEGROUP agemin="13" agemax="18" name="13-18" />
+      <TIMESTANDARDS>
+        <TIMESTANDARD swimtime="00:50.00">
+          <SWIMSTYLE distance="100" relaycount="1" stroke="FREE" />
+        </TIMESTANDARD>
+      </TIMESTANDARDS>
+    </TIMESTANDARDLIST>
+  XML
+
+  def list_with_age_group_missing_identifier_xml
+    wrap_time_standard_list(LIST_WITH_AGE_GROUP_MISSING_IDENTIFIER)
+  end
+
   def list_without_swim_time_xml
     wrap_time_standard_list(
       <<~XML
@@ -158,6 +173,13 @@ class TimeStandardListParserSuccessTest < Minitest::Test
     attributes = list_attributes(parse_time_standard_list)
 
     assert_equal TimeStandardListFixtures::LIST_EXPECTED, attributes
+  end
+
+  def test_parse_accepts_age_group_without_identifier
+    age_group = Lenex::Parser.parse(list_with_age_group_missing_identifier_xml).time_standard_lists.fetch(0).age_group
+
+    assert_nil age_group.age_group_id
+    assert_equal %w[13 18], [age_group.age_min, age_group.age_max]
   end
 
   def test_parse_includes_age_group

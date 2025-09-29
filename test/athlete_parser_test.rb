@@ -185,7 +185,9 @@ module AthleteParserDefaults
     'handicap' => 'S10',
     'heatid' => 'H1',
     'reactiontime' => '+15',
-    'swimdistance' => '5000'
+    'swimdistance' => '5000',
+    'entrytime' => '00:56:30.00',
+    'entrycourse' => 'LCM'
   }.freeze
 
   DEFAULT_ENTRY_ATTRIBUTES = {
@@ -289,6 +291,8 @@ module AthleteParserAttributeReaders
     status
     swim_distance
     swim_time
+    entry_time
+    entry_course
   ].freeze
 
   SPLIT_ATTRIBUTE_READERS = %i[
@@ -460,6 +464,8 @@ module AthleteParserExpectationConstants
     status: 'EXH',
     swim_distance: '5000',
     swim_time: '00:55:00.00',
+    entry_time: '00:56:30.00',
+    entry_course: 'LCM',
     splits_count: 1
   }.freeze
 

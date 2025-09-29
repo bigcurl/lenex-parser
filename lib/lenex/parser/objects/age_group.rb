@@ -45,20 +45,32 @@ module Lenex
         def self.extract_attributes(element)
           ATTRIBUTES.each_with_object({}) do |(attribute_name, definition), collected|
             value = element.attribute(attribute_name)&.value
-            ensure_required_attribute!(attribute_name, definition, value)
+            ensure_required_attribute!(element, attribute_name, definition, value)
             collected[definition[:key]] = value if value
           end
         end
         private_class_method :extract_attributes
 
-        def self.ensure_required_attribute!(attribute_name, definition, value)
+        def self.ensure_required_attribute!(element, attribute_name, definition, value)
           return unless definition[:required]
+          return if optional_age_group_id_without_reference?(element, attribute_name)
           return unless value.nil? || value.strip.empty?
 
           message = "AGEGROUP #{attribute_name} attribute is required"
           raise ::Lenex::Parser::ParseError, message
         end
         private_class_method :ensure_required_attribute!
+
+        def self.optional_age_group_id_without_reference?(element, attribute_name)
+          return false unless attribute_name == 'agegroupid'
+
+          parent = element.respond_to?(:parent) ? element.parent : nil
+          ALLOWED_PARENTS_WITHOUT_ID.include?(parent&.name)
+        end
+        private_class_method :optional_age_group_id_without_reference?
+
+        ALLOWED_PARENTS_WITHOUT_ID = %w[TIMESTANDARDLIST RECORDLIST].freeze
+        private_constant :ALLOWED_PARENTS_WITHOUT_ID
 
         def self.extract_rankings(collection_element)
           return [] unless collection_element
