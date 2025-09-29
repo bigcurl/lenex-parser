@@ -6,10 +6,14 @@ require 'stringio'
 require_relative 'parser/version'
 require_relative 'parser/objects'
 
+# Namespace for Lenex parsing functionality and data structures.
 module Lenex
   # Lenex namespace for parser functionality.
   module Parser
+    # Base error class for all parser-specific failures.
     class Error < StandardError; end
+
+    # Error raised when the parser encounters invalid Lenex XML input.
     class ParseError < Error; end
 
     module_function
@@ -32,6 +36,13 @@ module Lenex
       raise ParseError, e.message
     end
 
+    # Builds a Nokogiri document from the supplied source and returns the root
+    # element. The method is intentionally strict so that invalid documents are
+    # rejected early.
+    #
+    # @param source [#read, String]
+    # @return [Nokogiri::XML::Element]
+    # @raise [ParseError] if the XML is invalid
     def root_element_for(source)
       document = Nokogiri::XML::Document.parse(ensure_io(source)) do |config|
         config.strict.noblanks
@@ -40,6 +51,10 @@ module Lenex
     end
     private_class_method :root_element_for
 
+    # Normalizes the provided source so Nokogiri can consume it as an IO.
+    #
+    # @param source [#read, String]
+    # @return [#read] an IO-like object ready for Nokogiri
     def ensure_io(source)
       if source.respond_to?(:read)
         source.tap { |io| io.binmode if io.respond_to?(:binmode) }
