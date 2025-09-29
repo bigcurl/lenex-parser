@@ -65,6 +65,20 @@ document.time_standard_lists # => []
 ```
 
 `Lenex::Document::ConstructorMetadata` normalizes all keys to symbols so you can pass either strings or symbols when writing attributes (e.g., `constructor['contact'] = contact_details`). Each helper method returns the object you passed in, making it easy to chain builder flows.
+### Parsing zipped Lenex files
+
+`Lenex::Parser.parse` also recognises ZIP archives that contain a `.lef` or `.xml` payload and automatically extracts the first matching file. This makes it easy to work with the compressed exports that many federation systems produce:
+
+```ruby
+require 'lenex/parser'
+
+zip_data = File.binread('meet.lenex.zip')
+
+lenex = Lenex::Parser.parse(zip_data)
+puts lenex.constructor.name
+```
+
+The parser lazily loads the optional `rubyzip` dependency the first time a ZIP archive is encountered. Install it ahead of time with `gem install rubyzip` (or add it to your Gemfile) to keep parsing seamless in production environments.
 
 ### Object model overview
 

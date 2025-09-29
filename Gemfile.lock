@@ -3,6 +3,7 @@ PATH
   specs:
     lenex-parser (0.1.0)
       nokogiri (>= 1.14)
+      rubyzip (>= 2.3)
 
 GEM
   remote: https://rubygems.org/
@@ -50,6 +51,7 @@ GEM
       lint_roller (~> 1.1)
       rubocop (>= 1.72.1)
     ruby-progressbar (1.13.0)
+    rubyzip (3.1.1)
     simplecov (0.22.0)
       docile (~> 1.1)
       simplecov-html (~> 0.11)
