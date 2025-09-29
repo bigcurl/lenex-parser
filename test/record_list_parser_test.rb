@@ -260,18 +260,24 @@ class RecordListParserTest < Minitest::Test
 
   def test_missing_swim_style_raises
     xml = wrap_record_list(<<~XML)
-          <RECORDLIST course="LCM" gender="M" name="World Records">
-            <RECORDS>
-              <RECORD swimtime="00:47.00" />
-            </RECORDS>
-      def test_missing_record_list_records_element_raises
-        xml = wrap_record_list(<<~XML)
-          <RECORDLIST course="LCM" gender="M" name="World Records">
-          </RECORDLIST>
+      <RECORDLIST course="LCM" gender="M" name="World Records">
+        <RECORDS>
+          <RECORD swimtime="00:47.00" />
+        </RECORDS>
+      </RECORDLIST>
     XML
 
     error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
     assert_equal 'RECORD SWIMSTYLE element is required', error.message
+  end
+
+  def test_missing_record_list_records_element_raises
+    xml = wrap_record_list(<<~XML)
+      <RECORDLIST course="LCM" gender="M" name="World Records">
+      </RECORDLIST>
+    XML
+
+    error = assert_raises(::Lenex::Parser::ParseError) { Lenex::Parser.parse(xml) }
     assert_equal 'RECORDLIST RECORDS element is required', error.message
   end
 
