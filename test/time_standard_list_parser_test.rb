@@ -101,6 +101,15 @@ module TimeStandardListTestHelper
     )
   end
 
+  def list_without_time_standards_xml
+    wrap_time_standard_list(
+      <<~XML
+        <TIMESTANDARDLIST timestandardlistid="TS1" name="Olympic A" course="LCM" gender="M">
+        </TIMESTANDARDLIST>
+      XML
+    )
+  end
+
   def list_attributes(list)
     {
       class: list.class,
@@ -179,5 +188,12 @@ class TimeStandardListParserValidationTest < Minitest::Test
 
     error = assert_raises(::Lenex::Parser::ParseError) { parse_time_standard_list(xml) }
     assert_match(/TIMESTANDARD swimtime attribute is required/, error.message)
+  end
+
+  def test_missing_time_standards_element_raises
+    xml = list_without_time_standards_xml
+
+    error = assert_raises(::Lenex::Parser::ParseError) { parse_time_standard_list(xml) }
+    assert_equal('TIMESTANDARDLIST TIMESTANDARDS element is required', error.message)
   end
 end

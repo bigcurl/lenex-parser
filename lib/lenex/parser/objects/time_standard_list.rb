@@ -82,7 +82,10 @@ module Lenex
         private_class_method :age_group_from
 
         def self.extract_time_standards(collection_element)
-          return [] unless collection_element
+          unless collection_element
+            message = 'TIMESTANDARDLIST TIMESTANDARDS element is required'
+            raise ::Lenex::Parser::ParseError, message
+          end
 
           collection_element.xpath('TIMESTANDARD').map do |time_standard_element|
             TimeStandard.from_xml(time_standard_element)
