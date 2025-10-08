@@ -30,6 +30,6 @@ Gem::Specification.new do |spec|
   spec.executables   = Dir.children('bin').grep_v(/\A\./)
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'nokogiri', '>= 1.14'
-  spec.add_dependency 'rubyzip', '>= 2.3'
+  spec.add_runtime_dependency "nokogiri", "~> 1.14"
+  spec.add_runtime_dependency "rubyzip", "~> 2.3"
 end
